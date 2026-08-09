@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- The tab icon. A browser tab has no background of its own, so the mark has to hold
+       up on white and on near-black: an SVG favicon is a live document, and Chrome,
+       Firefox and Edge honour prefers-color-scheme inside it. Safari falls back to the
+       first declared fill, which is the light one. The middle bar is the same ink at
+       half, so the mark stays monochrome in either scheme. -->
+  <style>
+    rect { fill: #0a0a0a }
+    @media (prefers-color-scheme: dark) { rect { fill: #fafafa } }
+  </style>
+  <rect x="2" y="4.5" width="28" height="5" rx="2.5" />
+  <rect x="2" y="13.5" width="19" height="5" rx="2.5" fill-opacity="0.45" />
+  <rect x="2" y="22.5" width="12" height="5" rx="2.5" />
+</svg>

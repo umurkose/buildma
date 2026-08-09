@@ -1,0 +1,76 @@
+import type { LucideProps } from "lucide-react"
+import {
+  BadgeCheck,
+  ChartCandlestick,
+  Check,
+  ChevronRight,
+  ChevronsUpDown,
+  Circle,
+  ClipboardCopy,
+  Clock,
+  Fingerprint,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  Mail,
+  Menu,
+  MessageSquare,
+  Moon,
+  PanelLeft,
+  Pencil,
+  Plus,
+  RefreshCw,
+  ScrollText,
+  Search,
+  Settings,
+  ShieldAlert,
+  ShieldCheck,
+  Smartphone,
+  Sun,
+  Trash2,
+  UserPlus,
+  Users,
+  X,
+} from "lucide-react"
+
+// --- Icon registry (add an icon here to use it) ---
+const ICONS = {
+  BadgeCheck,
+  ChartCandlestick,
+  Check,
+  ChevronRight,
+  ChevronsUpDown,
+  Circle,
+  ClipboardCopy,
+  Clock,
+  Fingerprint,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  Mail,
+  Menu,
+  MessageSquare,
+  Moon,
+  PanelLeft,
+  Pencil,
+  Plus,
+  RefreshCw,
+  ScrollText,
+  Search,
+  Settings,
+  ShieldAlert,
+  ShieldCheck,
+  Smartphone,
+  Sun,
+  Trash2,
+  UserPlus,
+  Users,
+  X,
+} as const
+
+export type IconName = keyof typeof ICONS
+
+export function Icon({ name, ...props }: { name: IconName } & LucideProps) {
+  const LucideIcon = ICONS[name]
+  return <LucideIcon {...props} />
+}
