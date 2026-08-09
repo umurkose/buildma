@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1786115956793,
+      "tag": "0000_hot_firebrand",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1786188549756,
+      "tag": "0001_gifted_exodus",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1786190906438,
+      "tag": "0002_sloppy_gorgon",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1786191352555,
+      "tag": "0003_clean_master_chief",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1786192057737,
+      "tag": "0004_condemned_patch",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1786192399105,
+      "tag": "0005_wet_metal_master",
+      "breakpoints": true
+    }
+  ]
+}

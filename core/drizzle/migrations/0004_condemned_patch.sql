@@ -1,0 +1,1 @@
+ALTER TABLE `exports` ADD `block_types` text DEFAULT '' NOT NULL;

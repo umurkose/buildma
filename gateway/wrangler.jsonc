@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gateway",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-23",
+
+  // Local dev server. Port 8787 is the public entrypoint — it matches the web
+  // app's NEXT_PUBLIC_API_URL. `inspector_port: 0` = pick a free debugger port
+  // so parallel `wrangler dev` runs never clash.
+  "dev": {
+    "port": 8787,
+    "inspector_port": 0
+  },
+
+  // Service binding to the `core` Worker. The gateway proxies /api/* straight to
+  // it (Worker-to-Worker), so core never needs its own public route.
+  "services": [
+    { "binding": "CORE", "service": "core" }
+  ]
+}

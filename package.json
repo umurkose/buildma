@@ -1,0 +1,20 @@
+{
+  "name": "project",
+  "private": true,
+  "commands": {
+    "first time — installs + sets up the db, run once": "pnpm run setup",
+    "every day, before developing": "pnpm dev",
+    "check everything builds": "pnpm test",
+    "make a user an admin": "pnpm db admin <email>",
+    "only after you edit core/src/db/schema.ts": "pnpm db migrate",
+    "replace local dev db with a copy of production": "pnpm db pull",
+    "ship to production": "pnpm run deploy"
+  },
+  "scripts": {
+    "setup": "node script/setup.mjs",
+    "dev": "node script/dev.mjs",
+    "test": "node script/test.mjs",
+    "deploy": "cd core && npx wrangler d1 migrations apply core-db --remote && pnpm run deploy && cd ../gateway && pnpm run deploy",
+    "db": "node script/db.mjs"
+  }
+}

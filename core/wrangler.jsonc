@@ -1,0 +1,57 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "core",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-06-23",
+	// Core is private: it is reached only through the gateway's service binding,
+	// never over the internet. Without this it would also be published at
+	// core.<subdomain>.workers.dev, exposing /docs and every endpoint directly.
+	"workers_dev": false,
+	// Local dev server. `inspector_port: 0` picks a free debugger port so repeated
+	// or parallel `wrangler dev` runs never clash (the cause of "address already in
+	// use"). The gateway reaches core via the service binding, not this HTTP port.
+	"dev": {
+		"port": 8788,
+		"inspector_port": 0
+	},
+	// Non-secret config only. Everything credential-shaped lives in .dev.vars
+	// locally and in Workers Secrets in production, so it never sits in a file:
+	//   wrangler secret put JWT_SECRET
+	//   wrangler secret put PLATO_API_KEY          (the x-api-key for outbound calls)
+	//   wrangler secret put PLATO_WEBHOOK_SECRET   (verifies inbound webhooks)
+	//
+	// Plato v2 authenticates outbound calls with a plain x-api-key header — there is
+	// no request-signing secret. Production points at the live API; local dev
+	// overrides PLATO_API_URL to the sandbox in .dev.vars.
+	// PLATO_FLOW_ID is the published flow's integer ID from the Plato dashboard;
+	// left empty here, /api/kyc/start answers 502 kyc_not_configured until it's set.
+	// PLATO_RETURN_URL is where Plato returns the user after the hosted page.
+	// ENVIRONMENT gates the OpenAPI spec and Swagger UI (see src/index.ts).
+	// LOG_CODES="true" writes verification codes into the activity log even in
+	// production (see activity.ts) — for a staging/demo with no real users so a
+	// tester can read the OTP; turn it off ("false") once real accounts exist.
+	"vars": {
+		"ENVIRONMENT": "production",
+		"LOG_CODES": "true",
+		"DOCS": "true",
+	},
+	// D1 database. Create it with `wrangler d1 create core-db`, then paste the id.
+	// Local dev (`wrangler dev`) uses a local SQLite simulation keyed by the binding
+	// name; `database_id` is only used for the remote database.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "core-db",
+			"database_id": "d85ca5d3-d0ce-492c-8366-08ad93da53f8",
+			"migrations_dir": "drizzle/migrations"
+		}
+	],
+	// Keep invocation logs, drop verbose logs (mirrors the dashboard setting).
+	"observability": {
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true
+		}
+	},
+	"preview_urls": false
+}
