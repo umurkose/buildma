@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url'
 import { webcrypto as crypto } from 'node:crypto'
 
 const core = join(dirname(fileURLToPath(import.meta.url)), '..', 'core')
-const DB = 'core-db'
+const DB = 'blokma-db'
 
 const [cmd, ...rest] = process.argv.slice(2)
 const remote = rest.includes('--remote') // honoured by `user` and `admin`

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next"
+import { GoogleAnalytics } from "@next/third-parties/google"
 import "./globals.css"
 import { APP_NAME } from "@/core/server"
 import { SITE, socialMetadata } from "@/core/meta"
@@ -29,6 +30,7 @@ export const metadata: Metadata = {
   publisher: APP_NAME,
   category: "technology",
   alternates: { canonical: "/" },
+  verification: { google: "lEqLzS-thyy37vR0ODXMFBTc4c6uZQUmuuLiQvBbVm4" },
   robots: {
     index: true,
     follow: true,
@@ -91,6 +93,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </TooltipProvider>
           </QueryProvider>
         </ThemeProvider>
+        <GoogleAnalytics gaId="G-EGVGDFYQZ8" />
       </body>
     </html>
   )

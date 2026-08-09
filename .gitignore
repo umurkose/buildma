@@ -1,5 +1,8 @@
 .DS_Store
 .next/
 node_modules/
+.npm-cache/
+.pnpm-store/
+.wrangler-home/
 .env.local
 .env

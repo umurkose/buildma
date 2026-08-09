@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "gateway",
+  "name": "blokma-gateway",
   "main": "src/index.ts",
   "compatibility_date": "2026-06-23",
 
@@ -15,6 +15,6 @@
   // Service binding to the `core` Worker. The gateway proxies /api/* straight to
   // it (Worker-to-Worker), so core never needs its own public route.
   "services": [
-    { "binding": "CORE", "service": "core" }
+    { "binding": "CORE", "service": "blokma-core" }
   ]
 }

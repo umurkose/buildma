@@ -12,7 +12,7 @@ export { createRoute, z }
 
 // --- App config ---
 
-export const APP_NAME = 'Blockma'
+export const APP_NAME = 'Blokma'
 export const SUPPORT_EMAIL = 'support@app.com'
 
 // --- Identity ---

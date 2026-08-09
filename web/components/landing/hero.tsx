@@ -118,8 +118,7 @@ export function Hero() {
           variants={item}
           className="max-w-xl text-base text-muted-foreground text-pretty sm:text-lg"
         >
-          Polished emails, ready in minutes. Built to land the same in every inbox you
-          send to.
+          Drag, drop, and design standout emails - no code, no inbox surprises.
         </motion.p>
         <motion.div variants={item} className="flex flex-wrap items-center justify-center gap-3">
           <Button asChild size="lg">

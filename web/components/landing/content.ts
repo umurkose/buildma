@@ -128,7 +128,7 @@ export const USE_CASES: { key: string; icon: string; title: string; body: string
 
 export const FAQ: { q: string; a: string }[] = [
   {
-    q: "Is Blockma free?",
+    q: "Is Blokma free?",
     a: "Yes. The editor is free to use and there is no paid tier gating the export — you can build an email and download the HTML without paying anything.",
   },
   {
@@ -141,11 +141,11 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Will the email render correctly in Outlook?",
-    a: "That is what the exporter is built around. Outlook renders with Word's engine, so Blockma emits tables instead of divs, pins the column width with conditional ghost tables, and sets mso-line-height-rule:exactly so leading is not inflated.",
+    a: "That is what the exporter is built around. Outlook renders with Word's engine, so Blokma emits tables instead of divs, pins the column width with conditional ghost tables, and sets mso-line-height-rule:exactly so leading is not inflated.",
   },
   {
     q: "Can I use the HTML with Mailchimp, Klaviyo, HubSpot or SendGrid?",
-    a: "Yes. Blockma does not send email — it produces standard HTML. Paste the exported markup into any platform that accepts a custom HTML template, or hand it to your own sending code.",
+    a: "Yes. Blokma does not send email — it produces standard HTML. Paste the exported markup into any platform that accepts a custom HTML template, or hand it to your own sending code.",
   },
   {
     q: "Are the emails responsive on mobile?",
@@ -165,7 +165,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Do I need to know HTML or CSS?",
-    a: "No. Blockma is a visual builder — you drag blocks and move controls. The generated markup is there in the code preview if you want to read it, but you never have to write it.",
+    a: "No. Blokma is a visual builder — you drag blocks and move controls. The generated markup is there in the code preview if you want to read it, but you never have to write it.",
   },
 ]
 

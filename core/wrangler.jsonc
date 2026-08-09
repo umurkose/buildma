@@ -1,6 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "core",
+	"name": "blokma-core",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-06-23",
 	// Core is private: it is reached only through the gateway's service binding,
@@ -35,14 +35,14 @@
 		"LOG_CODES": "true",
 		"DOCS": "true",
 	},
-	// D1 database. Create it with `wrangler d1 create core-db`, then paste the id.
+	// D1 database for the Blokma core service.
 	// Local dev (`wrangler dev`) uses a local SQLite simulation keyed by the binding
 	// name; `database_id` is only used for the remote database.
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "core-db",
-			"database_id": "d85ca5d3-d0ce-492c-8366-08ad93da53f8",
+			"database_name": "blokma-db",
+			"database_id": "e812ad30-d864-4c08-8cc9-b3bac1c02d5d",
 			"migrations_dir": "drizzle/migrations"
 		}
 	],

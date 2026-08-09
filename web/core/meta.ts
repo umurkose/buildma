@@ -2,14 +2,19 @@ import type { Metadata } from "next"
 
 import { BLOCKS, CAPABILITIES, FAQ, STEPS } from "@/components/landing/content"
 
-export const APP_NAME = "Blockma"
+export const APP_NAME = "Blokma"
 
 export const APP_TAGLINE = "The free drag-and-drop email builder"
 
+const toAbsoluteUrl = (value: string) =>
+  `${value.startsWith("http://") || value.startsWith("https://") ? value : `https://${value}`}`.replace(/\/+$/, "")
+
 const RAW_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
-export const SITE_URL = RAW_URL.replace(/\/+$/, "")
+  process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim() ||
+  process.env.VERCEL_URL?.trim() ||
+  "http://localhost:3000"
+export const SITE_URL = toAbsoluteUrl(RAW_URL)
 
 export const SITE = {
   name: APP_NAME,
@@ -141,7 +146,7 @@ export function homeJsonLd() {
       {
         "@type": "HowTo",
         "@id": absolute("/#howto"),
-        name: "How to build an HTML email with Blockma",
+        name: "How to build an HTML email with Blokma",
         description:
           "Compose an email from blocks, style each one in the inspector, and export HTML that renders the same in every inbox.",
         totalTime: "PT5M",

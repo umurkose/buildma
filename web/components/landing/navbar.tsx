@@ -54,7 +54,7 @@ export function Navbar({
         />
 
         <motion.div initial={hidden} animate={shown} transition={{ ...ENTRANCE, delay: 0.05 }}>
-          <Link href="/" aria-label="Blockma — home">
+          <Link href="/" aria-label="Blokma — home">
             <Wordmark />
           </Link>
         </motion.div>
