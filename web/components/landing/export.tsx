@@ -2,23 +2,20 @@
 
 import { Copy, Download, FileCode2 } from "lucide-react"
 
-import { Reveal, SectionHeader } from "@/components/landing/section"
-import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { Reveal, SPACE, Section, SectionHeader } from "@/components/landing/section"
 
 const TOKEN = {
-  punc: "text-neutral-500",
-  tag: "text-sky-400",
-  attr: "text-violet-400",
-  str: "text-emerald-400",
-  note: "text-neutral-500 italic",
-  txt: "text-neutral-300",
+  punc: "text-white/40",
+  tag: "text-candy-sky",
+  attr: "text-candy-sun",
+  str: "text-white/60",
+  txt: "text-white/90",
 } as const
 
 type Token = [keyof typeof TOKEN, string]
 
 const SNIPPET: Token[][] = [
-  [["note", "<!-- 600px · table-based · every style inline -->"]],
-  [["note", "<!--[if mso]>"], ["txt", " ghost table pins the width in Outlook "], ["note", "<![endif]-->"]],
   [
     ["punc", "<"],
     ["tag", "table"],
@@ -76,57 +73,56 @@ const SNIPPET: Token[][] = [
 
 export function ExportSection() {
   return (
-    <section
-      id="export"
-      className="flex w-full min-w-0 scroll-mt-20 flex-col justify-center border-t border-border py-20 sm:py-24 lg:min-h-svh"
-    >
-      <div className="mx-auto w-full max-w-4xl px-5">
-        <SectionHeader
-          eyebrow="Export"
-          title="One file. Every inbox."
-          lead="The markup already carries what each client needs. You copy it, or download it, and send."
-        />
+    <Section id="export" surface="ink">
+      <SectionHeader
+        eyebrow="Export"
+        title="One file. Every inbox."
+        lead="The markup already carries what each client needs. You copy it, or download it, and send."
+      />
 
-        <Reveal className="mt-12">
-          <div className="overflow-hidden rounded-2xl border border-border bg-neutral-950">
-            <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
-              <FileCode2 className="size-3.5 shrink-0 text-neutral-400" />
-              <span className="flex-1 truncate font-mono text-[11px] text-neutral-400">
-                launch-announcement.html
-              </span>
-              <Button
-                type="button"
-                size="xs"
-                variant="outline"
-                className="hidden border-white/15 bg-transparent text-neutral-300 hover:bg-white/10 hover:text-white sm:inline-flex"
-              >
-                <Copy data-icon="inline-start" />
-                Copy
-              </Button>
-              <Button type="button" size="xs">
-                <Download data-icon="inline-start" />
-                Download
-              </Button>
-            </div>
-            <div className="overflow-x-auto p-5 sm:p-6">
-              <pre className="font-mono text-[11px] leading-[1.9] whitespace-pre sm:text-xs">
-                {SNIPPET.map((line, i) => (
-                  <div key={i}>
-                    {line.length === 0
-                      ? " "
-                      : line.map(([kind, value], j) => (
-                          <span key={j} className={TOKEN[kind]}>
-                            {value}
-                          </span>
-                        ))}
-                  </div>
-                ))}
-              </pre>
-            </div>
+      <Reveal className={cn(SPACE.content, "mx-auto max-w-4xl")}>
+        <div className="overflow-hidden rounded-[1.75rem] bg-[oklch(0.15_0.02_275)] ring-1 ring-white/10 shadow-[0_40px_80px_-40px_oklch(0_0_0/0.7)]">
+          <div className="flex items-center gap-2 border-b border-white/10 px-6 py-3">
+            <span aria-hidden className="mr-1 flex gap-1.5">
+              <span className="size-2.5 rounded-full bg-white/20" />
+              <span className="size-2.5 rounded-full bg-white/20" />
+              <span className="size-2.5 rounded-full bg-white/20" />
+            </span>
+            <FileCode2 aria-hidden className="size-3.5 shrink-0 text-white/50" />
+            <span className="flex-1 truncate font-mono text-[11px] text-white/60">
+              launch-announcement.html
+            </span>
+            {/* Pictures of the editor's buttons, not buttons: nothing here to press. */}
+            <span
+              aria-hidden
+              className="hidden h-7 items-center gap-1 rounded-full border border-white/15 px-2.5 text-xs font-medium text-white/80 sm:inline-flex"
+            >
+              <Copy className="size-3" />
+              Copy
+            </span>
+            <span
+              aria-hidden
+              className="inline-flex h-7 items-center gap-1 rounded-full bg-primary px-2.5 text-xs font-medium text-primary-foreground"
+            >
+              <Download className="size-3" />
+              Download
+            </span>
           </div>
-        </Reveal>
-
-      </div>
-    </section>
+          <div className="overflow-x-auto p-6">
+            <pre className="font-mono text-[11px] leading-[1.9] whitespace-pre sm:text-xs">
+              {SNIPPET.map((line, i) => (
+                <div key={i}>
+                  {line.map(([kind, value], j) => (
+                    <span key={j} className={TOKEN[kind]}>
+                      {value}
+                    </span>
+                  ))}
+                </div>
+              ))}
+            </pre>
+          </div>
+        </div>
+      </Reveal>
+    </Section>
   )
 }

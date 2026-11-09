@@ -18,6 +18,12 @@
    * so Tailwind's own ui-monospace stack applies instead. */
   --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", "SF Pro Display", Arial, sans-serif;
   --font-heading: var(--font-sans);
+  /* Landing page only: `--font-bricolage` is set by next/font on the landing
+   * wrapper (app/page.tsx), so the dashboard and editor never download it. */
+  --font-display: var(--font-bricolage), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --color-ink: var(--ink);
+  --color-candy-sun: var(--candy-sun);
+  --color-candy-sky: var(--candy-sky);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -247,6 +253,71 @@
   .container {
     @apply w-full max-w-full min-w-full mx-auto px-4;
   }
+}
+
+/* --- Landing page ----------------------------------------------------------
+ * The landing wears its own surfaces — warm paper in light, deep ink in dark —
+ * scoped to its wrapper so the dashboard and editor keep the neutral app theme.
+ * `--primary` is deliberately NOT overridden: the accent picker still drives
+ * every call-to-action here.
+ *
+ * Two candy colours are the block fills, and only two, so the page stays calm:
+ * `sun` is the brand yellow and `sky` is a light tint of the accent — blue by
+ * default, and whatever the picker chooses otherwise, so the page always reads as
+ * yellow plus one colour family. Text on a candy fill is always `ink`, which clears
+ * 7:1 on both in both themes. Dark mode tones them a step so panels don't glare. */
+.landing {
+  --background: oklch(0.984 0.009 85);
+  --foreground: oklch(0.22 0.025 275);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.025 275);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.025 275);
+  --muted: oklch(0.952 0.012 85);
+  --muted-foreground: oklch(0.47 0.02 275);
+  --border: oklch(0.9 0.014 85);
+  --input: oklch(0.9 0.014 85);
+  --ink: oklch(0.22 0.03 275);
+  --candy-sun: oklch(0.89 0.15 95);
+  --candy-sky: color-mix(in oklab, var(--primary) 45%, white);
+}
+
+.dark .landing {
+  --background: oklch(0.165 0.014 275);
+  --foreground: oklch(0.97 0.006 85);
+  --card: oklch(0.21 0.017 275);
+  --card-foreground: oklch(0.97 0.006 85);
+  --popover: oklch(0.21 0.017 275);
+  --popover-foreground: oklch(0.97 0.006 85);
+  --muted: oklch(0.245 0.018 275);
+  --muted-foreground: oklch(0.75 0.015 275);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --candy-sun: oklch(0.85 0.145 93);
+  --candy-sky: color-mix(in oklab, var(--primary) 60%, white);
+}
+
+/* An inverted panel inside the landing. It re-points the theme tokens instead of
+ * restyling its children, so anything placed inside reads correctly as-is. */
+.landing .surface-ink {
+  --background: oklch(0.205 0.025 275);
+  --foreground: oklch(0.97 0.006 85);
+  --card: oklch(0.25 0.026 275);
+  --muted: oklch(0.27 0.026 275);
+  --muted-foreground: oklch(0.79 0.015 275);
+  --border: oklch(1 0 0 / 12%);
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* A toy-brick edge: a darker lip along the bottom, a highlight along the top and a
+ * soft drop. It reads as "a block you can pick up" on any candy fill. */
+@utility brick {
+  box-shadow:
+    inset 0 -3px 0 0 oklch(0 0 0 / 0.13),
+    inset 0 1px 0 0 oklch(1 0 0 / 0.5),
+    0 1px 1px 0 oklch(0 0 0 / 0.06),
+    0 10px 20px -12px oklch(0 0 0 / 0.42);
 }
 
 a,
