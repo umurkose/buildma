@@ -1,0 +1,6 @@
+# pnpm 11 refuses to install when a dependency's build script hasn't been
+# reviewed (ERR_PNPM_IGNORED_BUILDS). wrangler needs both of these: esbuild
+# bundles the worker, workerd is the local Workers runtime behind `wrangler dev`.
+allowBuilds:
+  esbuild: true
+  workerd: true

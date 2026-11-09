@@ -1,13 +1,54 @@
 // Setup orchestrator: wipes and reinstalls node_modules for every workspace,
-// one at a time. Renders a live checklist — pending services are dim/gray, the
-// one installing is white with a spinner, finished ones turn into a green ✓.
+// one at a time, writes any missing local env files, then sets up the local db.
+// Renders a live checklist — pending services are dim/gray, the one installing
+// is white with a spinner, finished ones turn into a green ✓. If a step fails,
+// its own output is printed underneath.
 
 import { spawn } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { rm } from 'node:fs/promises'
+import { rm, writeFile } from 'node:fs/promises'
+import { randomBytes } from 'node:crypto'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
+
+// Local-only config the apps need but git never carries (.env* and .dev.vars are
+// ignored). Each is written once and never overwritten — edit them freely.
+const ENV_FILES = [
+  {
+    path: 'web/.env.local',
+    content: () =>
+      [
+        '# Where the web app reaches the API locally: the gateway worker.',
+        'NEXT_PUBLIC_API_URL=http://localhost:8787',
+        '',
+      ].join('\n'),
+  },
+  {
+    path: 'core/.dev.vars',
+    content: () =>
+      [
+        '# Local secrets for `wrangler dev` (production uses `wrangler secret put`).',
+        `JWT_SECRET=${randomBytes(32).toString('hex')}`,
+        '',
+        '# Optional. Without these no email is sent; the verification code is still',
+        '# written to the activity log (LOG_CODES), so local sign-up keeps working.',
+        '# BREVO_API_KEY=',
+        '# BREVO_SENDER=',
+        '',
+      ].join('\n'),
+  },
+]
+
+async function writeEnvFiles() {
+  for (const f of ENV_FILES) {
+    try {
+      await writeFile(join(root, f.path), f.content(), { flag: 'wx' }) // wx: skip if it exists
+    } catch (err) {
+      if (err.code !== 'EEXIST') throw err
+    }
+  }
+}
 
 const C = {
   reset: '\x1b[0m', dim: '\x1b[2m', bold: '\x1b[1m', white: '\x1b[97m',
@@ -18,6 +59,7 @@ const services = [
   { name: 'web',      dir: 'web',     cmd: 'npm',  args: ['install'] },
   { name: 'core',     dir: 'core',    cmd: 'pnpm', args: ['install'] },
   { name: 'gateway',  dir: 'gateway', cmd: 'pnpm', args: ['install'] },
+  { name: 'env',      envFiles: true },
   // After deps: generate (no-op if unchanged) + apply migrations to local D1.
   { name: 'database', dir: 'core',    db: true },
 ]
@@ -57,11 +99,19 @@ function step(dir, cmd, args, name) {
   return new Promise((resolve, reject) => {
     const proc = spawn(cmd, args, {
       cwd: join(root, dir),
-      stdio: ['ignore', 'ignore', 'ignore'], // keep the checklist clean
+      // Captured, not shown — keeps the checklist clean. Printed only if the
+      // step fails, so the real reason (e.g. a pnpm error) isn't swallowed.
+      stdio: ['ignore', 'pipe', 'pipe'],
     })
-    proc.on('exit', (code) =>
-      code === 0 ? resolve() : reject(new Error(`${name} failed (exit ${code})`)),
-    )
+    let out = ''
+    proc.stdout.on('data', (d) => (out += d))
+    proc.stderr.on('data', (d) => (out += d))
+    proc.on('exit', (code) => {
+      if (code === 0) return resolve()
+      const err = new Error(`${name} failed (exit ${code})`)
+      err.output = out
+      reject(err)
+    })
     proc.on('error', reject)
   })
 }
@@ -69,7 +119,9 @@ function step(dir, cmd, args, name) {
 async function run(s) {
   s.status = 'installing'
   render()
-  if (s.db) {
+  if (s.envFiles) {
+    await writeEnvFiles()
+  } else if (s.db) {
     // `db migrate` = generate + apply + seed. wrangler's migrate prompt
     // auto-answers "yes" with no TTY (stdio ignored).
     await step(s.dir, 'node', [join(root, 'script', 'db.mjs'), 'migrate'], s.name)
@@ -106,5 +158,8 @@ async function main() {
 
 main().catch((err) => {
   process.stdout.write(`\n  ${C.bold}\x1b[31m✗ ${err.message}${C.reset}\n\n`)
+  // The failing command's own output (last 40 lines) — usually says exactly why.
+  const tail = (err.output ?? '').trim().split('\n').slice(-40)
+  if (tail[0]) process.stdout.write(tail.map((l) => `    ${C.dim}${l}${C.reset}`).join('\n') + '\n\n')
   process.exit(1)
 })
