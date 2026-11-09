@@ -1,6 +1,6 @@
 "use client"
 
-import { motion, useReducedMotion, type MotionProps, type Transition } from "motion/react"
+import { motion } from "motion/react"
 import {
   Check,
   Copy,
@@ -15,15 +15,9 @@ import {
 import { cn } from "@/lib/utils"
 import { CAPABILITIES } from "@/components/landing/content"
 import { icon as resolveIcon } from "@/components/landing/icons"
-import { CANDY, cycle } from "@/components/landing/candy"
+import { TILE } from "@/components/landing/tiles"
 import { SPACE, Section, SectionHeader, useReveal } from "@/components/landing/section"
-
-// A bento: wide tiles and narrow ones alternate so the rows zig-zag.
-const SPAN: Record<string, string> = {
-  dnd: "lg:col-span-2",
-  inspector: "lg:col-span-2",
-  body: "lg:col-span-2",
-}
+import { useLoop } from "@/components/landing/loop"
 
 const VISUAL: Record<string, () => React.ReactNode> = {
   dnd: DndVisual,
@@ -47,16 +41,15 @@ export function Features() {
         lead="Undo that behaves, a draft that saves itself, and every setting in one place."
       />
 
-      <div className={cn(SPACE.content, SPACE.grid, "grid sm:grid-cols-2 lg:grid-cols-3")}>
-        {CAPABILITIES.map((capability, i) => {
-          const candy = cycle(i)
+      <div className={cn(SPACE.content, SPACE.grid, "grid md:grid-cols-2 lg:grid-cols-3")}>
+        {CAPABILITIES.map((capability) => {
           const Icon = resolveIcon(capability.icon)
           const Visual = VISUAL[capability.key]
           return (
             <motion.article
               key={capability.key}
               variants={item}
-              className={cn(SPACE.card, "flex flex-col", CANDY[candy].soft, SPAN[capability.key])}
+              className={cn(SPACE.card, "flex flex-col bg-muted/50")}
             >
               <div aria-hidden className="flex h-44 items-center justify-center select-none">
                 {Visual && <Visual />}
@@ -64,13 +57,13 @@ export function Features() {
               <div className={cn(SPACE.afterVisual, "flex items-center gap-3")}>
                 <span
                   className={cn(
-                    "brick flex size-9 shrink-0 items-center justify-center rounded-xl text-ink",
-                    CANDY[candy].solid,
+                    "flex size-9 shrink-0 items-center justify-center rounded-xl",
+                    TILE,
                   )}
                 >
                   <Icon className="size-4.5" />
                 </span>
-                <h3 className="font-display text-xl font-bold tracking-[-0.02em]">
+                <h3 className="text-xl font-semibold tracking-tight">
                   {capability.title}
                 </h3>
               </div>
@@ -89,24 +82,6 @@ export function Features() {
 // Each one acts out its capability on a seamless loop: every keyframe track ends
 // where it starts, so the repeat has no seam. Reduced motion holds one still pose.
 
-type Frames = Record<string, (string | number)[]>
-
-function useLoop() {
-  const reduce = useReducedMotion()
-  return (frames: Frames, transition: Transition, still?: Record<string, string | number>) => {
-    const first = Object.fromEntries(Object.entries(frames).map(([key, values]) => [key, values[0]]))
-    if (reduce) {
-      const pose = still ?? first
-      return { initial: pose, animate: pose } as MotionProps
-    }
-    return {
-      initial: first,
-      animate: frames,
-      transition: { repeat: Infinity, ease: "easeInOut", ...transition },
-    } as MotionProps
-  }
-}
-
 // A block is dragged into the empty slot, rests there, and is lifted out again.
 function DndVisual() {
   const loop = useLoop()
@@ -114,12 +89,12 @@ function DndVisual() {
   return (
     <div className="relative w-64">
       <div className={cn("rounded-2xl bg-white p-3", PAPER_SHADOW)}>
-        <div className="flex h-8 items-center gap-2 rounded-lg bg-candy-sun px-2.5 text-[11px] font-semibold text-ink">
+        <div className="flex h-8 items-center gap-2 rounded-lg bg-neutral-100 px-2.5 text-[11px] font-semibold text-neutral-900">
           <Heading className="size-3.5" />
           Heading
         </div>
         <div className="mt-2 h-8 rounded-lg border-2 border-dashed border-neutral-300" />
-        <div className="mt-2 flex h-8 items-center gap-2 rounded-lg bg-candy-sun px-2.5 text-[11px] font-semibold text-ink">
+        <div className="mt-2 flex h-8 items-center gap-2 rounded-lg bg-neutral-100 px-2.5 text-[11px] font-semibold text-neutral-900">
           <MousePointerClick className="size-3.5" />
           Button
         </div>
@@ -129,14 +104,14 @@ function DndVisual() {
         {...loop({ x: [30, 30, 0, 0, 30], y: [-16, -16, 0, 0, -16] }, timing)}
       >
         <motion.div
-          className="brick flex h-8 items-center gap-2 rounded-lg bg-candy-sky px-2.5 text-[11px] font-semibold text-ink"
+          className="brick flex h-8 items-center gap-2 rounded-lg bg-primary px-2.5 text-[11px] font-semibold text-primary-foreground"
           {...loop({ scale: [1.04, 1.04, 1, 1, 1.04] }, timing)}
         >
           <ImageIcon className="size-3.5" />
           Image
         </motion.div>
         <MousePointer2
-          className="absolute -right-2 -bottom-4 size-5 fill-ink text-white"
+          className="absolute -right-2 -bottom-4 size-5 fill-neutral-900 text-white"
           strokeWidth={1.5}
         />
       </motion.div>
@@ -152,7 +127,7 @@ const UNDONE: Record<number, number> = { 8: 0.14, 7: 0.4, 6: 0.66 }
 function UndoVisual() {
   const loop = useLoop()
   const key =
-    "brick flex size-15 items-center justify-center rounded-2xl bg-white font-display text-3xl font-bold text-ink"
+    "brick flex size-15 items-center justify-center rounded-2xl bg-white text-3xl font-semibold text-neutral-900"
   return (
     <div className="flex flex-col items-center gap-5">
       <div className="flex gap-2.5">
@@ -220,14 +195,14 @@ function SaveVisual() {
             )}
           />
           <motion.span
-            className="ml-0.5 h-3 w-px bg-ink"
+            className="ml-0.5 h-3 w-px bg-neutral-900"
             {...loop({ opacity: [1, 0, 1] }, { duration: 0.9, ease: "linear" })}
           />
         </div>
         <div className="mt-3 h-6 w-20 rounded-full bg-primary" />
       </div>
       <motion.span
-        className="brick inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-ink"
+        className="brick inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-neutral-900"
         {...loop(
           { scale: [1, 1, 1.1, 1, 1, 1.1, 1, 1] },
           { duration: 5, times: [0, 0.32, 0.36, 0.42, 0.82, 0.86, 0.92, 1] },
@@ -242,7 +217,7 @@ function SaveVisual() {
 
 // Every control in the panel takes a turn: size and spacing slide, the colour
 // selection walks along the swatches, alignment steps across.
-const SWATCHES = ["bg-candy-sun", "bg-candy-sky", "bg-neutral-800", "bg-primary"]
+const SWATCHES = ["bg-neutral-300", "bg-neutral-500", "bg-neutral-800", "bg-primary"]
 
 function InspectorVisual() {
   const loop = useLoop()
@@ -272,10 +247,10 @@ function InspectorVisual() {
           <span className="w-12 shrink-0">{label}</span>
           <span className="relative h-1.5 flex-1 rounded-full bg-neutral-200">
             <motion.span
-              className="absolute inset-y-0 left-0 rounded-full bg-candy-sky"
+              className="absolute inset-y-0 left-0 rounded-full bg-primary/70"
               {...loop({ width: frames }, { duration: 6, times })}
             >
-              <span className="absolute top-1/2 -right-1.5 size-3 -translate-y-1/2 rounded-full border-2 border-white bg-ink shadow-sm" />
+              <span className="absolute top-1/2 -right-1.5 size-3 -translate-y-1/2 rounded-full border-2 border-white bg-neutral-900 shadow-sm" />
             </motion.span>
           </span>
         </div>
@@ -305,9 +280,9 @@ function InspectorVisual() {
 function BodyVisual() {
   const loop = useLoop()
   return (
-    <div className="brick relative flex h-40 w-72 justify-center overflow-hidden rounded-2xl bg-candy-sky pt-4">
+    <div className="brick relative flex h-40 w-72 justify-center overflow-hidden rounded-2xl bg-[color-mix(in_oklab,var(--primary)_35%,white)] pt-4">
       <motion.div
-        className="absolute inset-0 bg-candy-sun"
+        className="absolute inset-0 bg-neutral-200"
         {...loop({ opacity: [1, 1, 0, 0, 1] }, { duration: 6, times: [0, 0.35, 0.5, 0.85, 1] })}
       />
       <div className="relative h-full w-40 rounded-t-xl bg-white p-3 shadow-[0_0_0_1px_oklch(0_0_0/0.04)]">
@@ -328,7 +303,7 @@ function ExportVisual() {
   return (
     <div className="flex flex-col items-center gap-3">
       <motion.div
-        className={cn("flex items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-ink", PAPER_SHADOW)}
+        className={cn("flex items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-neutral-900", PAPER_SHADOW)}
         {...loop(
           { opacity: [0, 0, 1, 1, 0, 0], y: [8, 8, 0, 0, 0, 8] },
           { duration: 4.5, times: [0, 0.3, 0.4, 0.82, 0.92, 1] },
@@ -339,7 +314,7 @@ function ExportVisual() {
         <span className="font-mono text-[11px]">launch-day.html</span>
       </motion.div>
       <div className="flex gap-2">
-        <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-ink shadow-[0_1px_2px_oklch(0_0_0/0.1)]">
+        <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-neutral-900 shadow-[0_1px_2px_oklch(0_0_0/0.1)]">
           <Copy className="size-3.5" />
           Copy
         </span>

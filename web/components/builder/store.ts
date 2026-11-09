@@ -43,6 +43,13 @@ export type Doc = {
   fontFamily: FontKey
   spacingX: number
   spacingY: number
+  /**
+   * How the email behaves in a dark inbox: `adapt` ships dark-mode colours (see
+   * dark.ts) and previews them in a dark editor; `fixed` keeps the colours as
+   * designed. Optional because drafts saved before it existed don't carry it —
+   * missing means `adapt`.
+   */
+  darkMode?: "adapt" | "fixed"
 }
 
 export type FontKey =
@@ -290,9 +297,39 @@ function makeBlock(type: BlockType): Block {
 
 export const COLUMN_TYPES: BlockType[] = ["text", "heading", "image", "button"]
 
+// --- Columns geometry ---------------------------------------------------------
+// One source for the editor's canvas and the exporter. A column's content sits
+// COLUMN_GAP in from its own edge, and the columns block itself is inset by its
+// spacing less that same amount — so the content of the outer columns lines up
+// exactly with every other block, and neighbouring columns are a full gutter apart.
+
+/** Half the gap between two columns. */
+export const COLUMN_GAP = 12
+
+/** The columns block's own horizontal padding. */
+export function columnsInset(block: Block, doc: Doc): number {
+  return Math.max(0, blockSpacing(block, doc).x - COLUMN_GAP)
+}
+
+/** The width of one column in the 600px email. */
+export function columnWidth(block: Block, doc: Doc, count = block.children.length): number {
+  return Math.floor((EMAIL_WIDTH - columnsInset(block, doc) * 2) / Math.max(1, count))
+}
+
+/** A child as it renders inside a column: the half gap unless it sets its own spacing. */
+export function inColumn(child: Block): Block {
+  return child.spacingX === null ? { ...child, spacingX: COLUMN_GAP } : child
+}
+
+/** The widest an image can be inside a column. */
+export function columnImageMax(block: Block, doc: Doc, count = block.children.length): number {
+  return Math.max(40, columnWidth(block, doc, count) - COLUMN_GAP * 2)
+}
+
+/** A child image's starting width for `count` columns at the default spacing. */
 export function columnContentWidth(count: number, gutter: number = EMAIL_GUTTER): number {
-  const col = Math.floor((EMAIL_WIDTH - gutter * 2) / Math.max(1, count))
-  return Math.max(80, col - gutter * 2)
+  const col = Math.floor((EMAIL_WIDTH - Math.max(0, gutter - COLUMN_GAP) * 2) / Math.max(1, count))
+  return Math.max(80, col - COLUMN_GAP * 2)
 }
 
 export function makeColumnChild(type: BlockType): Block {
@@ -309,6 +346,7 @@ const DEFAULT_DOC: Doc = {
   fontFamily: "system",
   spacingX: EMAIL_GUTTER,
   spacingY: 12,
+  darkMode: "adapt",
 }
 
 type Snapshot = { blocks: Block[]; doc: Doc }

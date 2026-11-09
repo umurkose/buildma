@@ -8,7 +8,7 @@ import { ArrowRight, Moon, Sun } from "lucide-react"
 
 import { APP_NAME, SECTIONS } from "@/core/meta"
 import { Button } from "@/components/ui/button"
-import { BlockLogo } from "@/components/landing/logo"
+import { Logo } from "@/components/ui/logo"
 
 const ENTRANCE = { type: "spring", bounce: 0, duration: 0.5 } as const
 
@@ -48,8 +48,8 @@ export function Navbar({
           aria-label={`${APP_NAME} — home`}
           className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-3 focus-visible:ring-primary/50"
         >
-          <BlockLogo />
-          <span className="font-display text-xl font-extrabold tracking-[-0.03em]">{APP_NAME}</span>
+          <Logo className="size-6 text-foreground" />
+          <span className="text-lg font-semibold tracking-tight">{APP_NAME}</span>
         </Link>
 
         <nav
@@ -76,7 +76,7 @@ export function Navbar({
           )}
           <Link
             href="/editor"
-            className="group brick inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-transform duration-200 ease-out outline-none focus-visible:ring-3 focus-visible:ring-primary/50 active:scale-[0.97] motion-safe:hover:-translate-y-px"
+            className="group brick inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-[background-color,scale] duration-200 ease-out outline-none hover:bg-primary/90 focus-visible:ring-3 focus-visible:ring-primary/50 active:scale-[0.97]"
           >
             Editor
             <ArrowRight className="size-4 transition-transform duration-200 ease-out motion-safe:group-hover:translate-x-0.5" />

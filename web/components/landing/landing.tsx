@@ -23,8 +23,8 @@ export function Landing({ isAuth, className }: { isAuth: boolean; className?: st
   return (
     <div
       ref={scrollRef}
-      // `landing` swaps in the page's own paper/ink surfaces and candy colours
-      // (app/globals.css); everything inside reads them through the usual tokens.
+      // `landing` sets the page's typeface and its accent tint (app/globals.css);
+      // everything else comes from the app's shadcn theme tokens.
       className={cn(
         "landing relative min-h-0 flex-1 overflow-y-auto bg-background text-foreground motion-safe:scroll-smooth",
         className,
@@ -34,8 +34,12 @@ export function Landing({ isAuth, className }: { isAuth: boolean; className?: st
         <Navbar scrollRef={scrollRef} isAuth={isAuth} />
 
         <main>
-          <Hero />
-          <BlockTape />
+          {/* The hero and its strip fill the first screen, so the strip runs along
+              its bottom edge on any display; 4.25rem is the sticky navbar above. */}
+          <div className="flex min-h-[calc(100svh-4.25rem)] flex-col">
+            <Hero />
+            <BlockTape />
+          </div>
           <BlocksSection />
           <HowItWorks />
           <Features />

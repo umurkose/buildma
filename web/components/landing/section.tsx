@@ -3,7 +3,7 @@
 import { motion, useReducedMotion, type Variants } from "motion/react"
 
 import { cn } from "@/lib/utils"
-import { CANDY, type Candy } from "@/components/landing/candy"
+import { TILE } from "@/components/landing/tiles"
 
 // Critically damped: a section arriving on scroll carried no gesture, so it settles
 // rather than overshoots. Bounce is earned by momentum, and there is none here.
@@ -59,7 +59,7 @@ export function Section({
       className={cn("w-full min-w-0 scroll-mt-24", surface && PANEL_GUTTER, className)}
     >
       {surface ? (
-        <div className={cn(PANEL, surface === "card" ? "bg-card ring-1 ring-border ring-inset" : "surface-ink")}>
+        <div className={cn(PANEL, surface === "card" ? "bg-muted/50 ring-1 ring-border ring-inset" : "surface-ink")}>
           {inner}
         </div>
       ) : (
@@ -87,21 +87,13 @@ export const SPACE = {
   body: "mt-3",
 } as const
 
-/** A candy label. */
-export function Sticker({
-  candy = "sun",
-  className,
-  children,
-}: {
-  candy?: Candy
-  className?: string
-  children: React.ReactNode
-}) {
+/** A small label above a heading, in the accent's tint. */
+export function Sticker({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
     <span
       className={cn(
-        "brick inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-sm font-semibold text-ink",
-        CANDY[candy].solid,
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium",
+        TILE,
         className,
       )}
     >
@@ -112,14 +104,12 @@ export function Sticker({
 
 export function SectionHeader({
   eyebrow,
-  candy = "sun",
   title,
   lead,
   align = "center",
   className,
 }: {
   eyebrow: string
-  candy?: Candy
   title: React.ReactNode
   lead?: React.ReactNode
   align?: "center" | "left"
@@ -135,8 +125,8 @@ export function SectionHeader({
         className,
       )}
     >
-      <Sticker candy={candy}>{eyebrow}</Sticker>
-      <h2 className="mt-6 font-display text-4xl leading-[1.04] font-extrabold tracking-[-0.025em] text-balance sm:text-5xl lg:text-[3.5rem]">
+      <Sticker>{eyebrow}</Sticker>
+      <h2 className="mt-6 font-display text-4xl leading-[1.05] font-bold tracking-[-0.03em] text-balance sm:text-5xl lg:text-[3.5rem]">
         {title}
       </h2>
       {lead && (

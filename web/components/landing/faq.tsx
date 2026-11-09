@@ -10,7 +10,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { FAQ } from "@/components/landing/content"
-import { CANDY } from "@/components/landing/candy"
 import { SPACE, Section, SectionHeader, useReveal } from "@/components/landing/section"
 
 export function Faq() {
@@ -35,9 +34,9 @@ export function Faq() {
             aria-hidden
             className={cn(SPACE.content, "hidden flex-col gap-2 lg:flex")}
           >
-            <span className="brick h-9 w-48 rounded-xl bg-candy-sun" />
-            <span className="brick h-9 w-36 rounded-xl bg-candy-sky" />
-            <span className="brick h-9 w-24 rounded-xl bg-candy-sun" />
+            <span className="h-9 w-48 rounded-xl bg-primary" />
+            <span className="h-9 w-36 rounded-xl bg-primary/50" />
+            <span className="h-9 w-24 rounded-xl bg-primary/25" />
           </motion.div>
         </div>
 
@@ -48,8 +47,7 @@ export function Faq() {
                 key={entry.q}
                 value={entry.q}
                 className={cn(
-                  "rounded-2xl border border-border bg-card px-6 transition-colors duration-300 data-[state=open]:border-transparent",
-                  CANDY.sun.open,
+                  "rounded-2xl border border-border bg-card px-6 transition-colors duration-300 data-[state=open]:bg-muted/50",
                 )}
               >
                 <AccordionTrigger className="items-center py-5 text-base font-semibold hover:no-underline hover:text-foreground">

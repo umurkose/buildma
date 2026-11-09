@@ -69,14 +69,14 @@ export function Hero() {
     : { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: ENTRANCE } }
 
   return (
-    <section className="relative isolate overflow-x-clip">
+    <section className="relative isolate flex flex-1 flex-col justify-center overflow-x-clip">
       {/* The editor's dotted canvas, fading out toward the edges. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(var(--color-border)_1.3px,transparent_1.3px)] bg-size-[24px_24px] [mask-image:radial-gradient(ellipse_75%_65%_at_50%_42%,black,transparent)]"
       />
 
-      <div className="mx-auto grid max-w-6xl items-center gap-16 px-4 pt-10 pb-20 sm:px-6 lg:grid-cols-[1.08fr_1fr] lg:gap-6 lg:pt-16 lg:pb-28">
+      <div className="mx-auto grid w-full max-w-6xl items-center gap-16 px-4 pt-10 pb-20 sm:px-6 lg:grid-cols-[1.08fr_1fr] lg:gap-6 lg:pt-16 lg:pb-28">
         <motion.div
           variants={container}
           initial="hidden"
@@ -88,7 +88,7 @@ export function Hero() {
               1024px two-column squeeze. */}
           <motion.h1
             variants={item}
-            className="font-display text-[clamp(2.4rem,11cqi,5rem)] leading-[1.02] font-extrabold tracking-[-0.03em]"
+            className="font-display text-[clamp(2.4rem,11cqi,5rem)] leading-[1.05] font-bold tracking-[-0.035em]"
           >
             <span className="block whitespace-nowrap">
               Design <EmailsWord revealed={revealed} reduce={reduce} />
@@ -106,7 +106,7 @@ export function Hero() {
           <motion.div variants={item} className="mt-10 flex flex-wrap items-center gap-3">
             <Link
               href="/editor"
-              className="group brick inline-flex h-13 items-center gap-2 rounded-full bg-primary pr-5 pl-6 text-base font-semibold text-primary-foreground transition-transform duration-200 ease-out outline-none focus-visible:ring-3 focus-visible:ring-primary/50 active:scale-[0.98] motion-safe:hover:-translate-y-0.5"
+              className="group brick inline-flex h-13 items-center gap-2 rounded-full bg-primary pr-5 pl-6 text-base font-semibold text-primary-foreground transition-[background-color,scale] duration-200 ease-out outline-none hover:bg-primary/90 focus-visible:ring-3 focus-visible:ring-primary/50 active:scale-[0.98]"
             >
               Open the editor
               <ArrowRight className="size-4.5 transition-transform duration-200 ease-out motion-safe:group-hover:translate-x-0.5" />
@@ -126,7 +126,7 @@ export function Hero() {
   )
 }
 
-// The hero picture: a finished email resting on two candy cards. The cards drift
+// The hero picture: a finished email resting on two soft cards. The cards drift
 // on slow, out-of-step loops and the email floats a few pixels — enough to feel
 // alive, never enough to pull the eye from the headline. Reduced motion holds
 // everything still.
@@ -144,12 +144,12 @@ function EmailPreview() {
       className="relative isolate mx-auto w-[calc(100%-3rem)] max-w-[22.5rem] select-none lg:mr-6 lg:ml-auto"
     >
       <motion.div
-        className="absolute -inset-x-6 top-14 -bottom-6 -z-10 rounded-[2.5rem] bg-candy-sky/45"
+        className="absolute -inset-x-6 top-14 -bottom-6 -z-10 rounded-[2.5rem] bg-muted"
         animate={reduce ? undefined : { x: [0, -10, 0], y: [0, 10, 0] }}
         transition={reduce ? undefined : { ...DRIFT, duration: 9 }}
       />
       <motion.div
-        className="absolute -inset-x-6 -top-6 bottom-20 -z-10 rounded-[2.5rem] bg-candy-sun/55 dark:bg-white/[0.08]"
+        className="absolute -inset-x-6 -top-6 bottom-20 -z-10 rounded-[2.5rem] bg-tint"
         animate={reduce ? undefined : { x: [0, 10, 0], y: [0, -10, 0] }}
         transition={reduce ? undefined : { ...DRIFT, duration: 11, delay: 0.6 }}
       />
@@ -166,7 +166,7 @@ function EmailPreview() {
         >
           {/* Inbox chrome: sender and subject. */}
           <div className="flex items-center gap-2.5 border-b border-neutral-100 pb-3">
-            <span className="flex size-8 items-center justify-center rounded-full bg-candy-sun text-[11px] font-bold text-ink">
+            <span className="flex size-8 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
               B
             </span>
             <div className="flex-1">
@@ -176,13 +176,13 @@ function EmailPreview() {
             <span className="text-[10px] text-neutral-400">9:41</span>
           </div>
 
-          <div className="relative mt-4 h-32 overflow-hidden rounded-2xl bg-linear-to-br from-candy-sky to-[color-mix(in_oklab,var(--primary)_70%,white)]">
-            <span className="absolute top-5 right-7 size-9 rounded-full bg-candy-sun" />
+          <div className="relative mt-4 h-32 overflow-hidden rounded-2xl bg-linear-to-br from-[color-mix(in_oklab,var(--primary)_25%,white)] to-[color-mix(in_oklab,var(--primary)_60%,white)]">
+            <span className="absolute top-5 right-7 size-9 rounded-full bg-white/80" />
             <span className="absolute -bottom-12 -left-4 h-24 w-40 rounded-[2rem] bg-white/45" />
             <span className="absolute -right-6 -bottom-14 h-24 w-44 rounded-[2rem] bg-white/30" />
           </div>
 
-          <p className="mt-5 font-display text-[1.6rem] leading-tight font-extrabold tracking-[-0.03em]">
+          <p className="mt-5 text-[1.6rem] leading-tight font-bold tracking-[-0.03em]">
             Welcome aboard
           </p>
           <p className="mt-2 text-[0.9rem] leading-snug text-neutral-500">

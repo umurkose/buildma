@@ -42,6 +42,20 @@ export function IndicatorFill({
   )
 }
 
+/**
+ * How much an ancestor's transform is scaling the host right now. A dialog zooming
+ * in draws everything at 95% for its first 200ms, and getBoundingClientRect reports
+ * it that way — measured then, the pill came out 95% of the button and off to one
+ * side. Rects are divided by this, so the pill is laid out at the host's own size.
+ * offsetWidth is layout, untouched by transforms (and whole pixels, hence the slack).
+ */
+function scaleOf(host: HTMLElement, rect: DOMRect): [number, number] {
+  const sx = Math.abs(rect.width - host.offsetWidth) < 1 || !host.offsetWidth ? 1 : rect.width / host.offsetWidth
+  const sy =
+    Math.abs(rect.height - host.offsetHeight) < 1 || !host.offsetHeight ? 1 : rect.height / host.offsetHeight
+  return [sx, sy]
+}
+
 export function useIndicator<T extends HTMLElement>({
   active,
   item,
@@ -59,6 +73,7 @@ export function useIndicator<T extends HTMLElement>({
       const host = ref.current
       if (!host || !item) return
       const hostRect = host.getBoundingClientRect()
+      const [sx, sy] = scaleOf(host, hostRect)
       const end = start + size
 
       const work: [HTMLElement, number, number][] = []
@@ -66,8 +81,8 @@ export function useIndicator<T extends HTMLElement>({
         const fill = el.querySelector<HTMLElement>(FILL)
         if (!fill) continue
         const r = el.getBoundingClientRect()
-        const a = horizontal ? r.left - hostRect.left : r.top - hostRect.top
-        const len = horizontal ? r.width : r.height
+        const a = horizontal ? (r.left - hostRect.left) / sx : (r.top - hostRect.top) / sy
+        const len = horizontal ? r.width / sx : r.height / sy
         work.push([
           fill,
           Math.min(Math.max(start - a, 0), len),
@@ -91,13 +106,14 @@ export function useIndicator<T extends HTMLElement>({
     const el = host?.querySelector<HTMLElement>(active)
     if (!host || !el) return null
     const hostRect = host.getBoundingClientRect()
+    const [sx, sy] = scaleOf(host, hostRect)
     const cs = getComputedStyle(host)
     const r = el.getBoundingClientRect()
     return {
-      x: r.left - hostRect.left - (parseFloat(cs.borderLeftWidth) || 0),
-      y: r.top - hostRect.top - (parseFloat(cs.borderTopWidth) || 0),
-      width: r.width,
-      height: r.height,
+      x: (r.left - hostRect.left) / sx - (parseFloat(cs.borderLeftWidth) || 0),
+      y: (r.top - hostRect.top) / sy - (parseFloat(cs.borderTopWidth) || 0),
+      width: r.width / sx,
+      height: r.height / sy,
     }
   }, [active])
 
@@ -154,6 +170,13 @@ export function useIndicator<T extends HTMLElement>({
     const settle = () => measure(false)
     host.addEventListener("animationend", settle)
     host.addEventListener("transitionend", settle)
+    // And once an ancestor's entrance (a dialog's zoom, a sheet's slide) has played
+    // out: those events never reach the host, they fire above it.
+    const onAncestor = (event: Event) => {
+      const target = event.target
+      if (target instanceof Node && target !== host && target.contains(host)) measure(false)
+    }
+    document.addEventListener("animationend", onAncestor, true)
     const running = host.getAnimations?.({ subtree: true }) ?? []
     Promise.allSettled(running.map((a) => a.finished)).then(settle)
 
@@ -164,6 +187,7 @@ export function useIndicator<T extends HTMLElement>({
       window.removeEventListener("resize", onViewport)
       host.removeEventListener("animationend", settle)
       host.removeEventListener("transitionend", settle)
+      document.removeEventListener("animationend", onAncestor, true)
     }
   }, [active, enabled, locate, paint, horizontal])
 

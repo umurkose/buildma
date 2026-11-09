@@ -2,41 +2,36 @@
 
 import { useEffect, useRef, useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
+import { useTheme } from "next-themes"
+import { Monitor, Moon, SlidersHorizontal, Sun, X, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { TextSizeSelect } from "@/components/theme/text-size"
 import { PrimaryColorPicker } from "@/components/theme/color"
-import { ThemeSelect } from "@/components/theme/toggle"
+import { TEXT_SIZE_LABELS, TEXT_SIZES, useTextSize, type TextSize } from "@/components/theme/text-size"
 
+// The floating display-settings button, bottom right on every page. It is a solid
+// disc — not an outline — so it stays visible over anything: the landing page, the
+// editor's coloured canvas, a dark dashboard.
 export const DOCK_BUTTON =
-  "group size-12 rounded-full shadow-xs hover:border-primary! hover:bg-primary! hover:text-primary-foreground!"
+  "group size-12 rounded-full border-transparent bg-foreground text-background shadow-lg shadow-black/15 hover:bg-foreground/90 hover:text-background dark:border-transparent dark:bg-foreground dark:hover:bg-foreground/90"
 
 const PANEL = { type: "spring", bounce: 0.2, duration: 0.35 } as const
-const MORPH = { type: "spring", bounce: 0.25, duration: 0.35 } as const
 
-function MenuGlyph({ open, reduce }: { open: boolean; reduce: boolean | null }) {
-  const transition = reduce ? { duration: 0.12 } : MORPH
-  const bar = "absolute h-[2px] w-[18px] rounded-full bg-current"
-  return (
-    <span aria-hidden className="relative flex size-5 items-center justify-center">
-      <motion.span
-        className={bar}
-        initial={false}
-        animate={{ rotate: open ? 45 : 0, y: open ? 0 : -3.5 }}
-        transition={transition}
-      />
-      <motion.span
-        className={bar}
-        initial={false}
-        animate={{ rotate: open ? -45 : 0, y: open ? 0 : 3.5 }}
-        transition={transition}
-      />
-    </span>
-  )
+const THEMES: { value: string; label: string; icon: LucideIcon }[] = [
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "System", icon: Monitor },
+]
+
+// How big the "A" on each text-size option is drawn.
+const GLYPH: Record<TextSize, string> = {
+  "text-base": "text-sm",
+  "text-lg": "text-base",
+  "text-xl": "text-lg",
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Group({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
       <span className="text-xs font-medium text-muted-foreground">{label}</span>
@@ -45,11 +40,61 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
+/** A row of equal choices; the active one is outlined in the accent. */
+function Choices({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} className="grid grid-cols-3 gap-2">
+      {children}
+    </div>
+  )
+}
+
+function Choice({
+  active,
+  disabled,
+  onSelect,
+  children,
+}: {
+  active: boolean
+  disabled?: boolean
+  onSelect: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      disabled={disabled}
+      onClick={onSelect}
+      className={cn(
+        "flex h-16 flex-col items-center justify-center gap-1 rounded-xl border text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+        active
+          ? "border-primary bg-primary/10 text-foreground"
+          : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",
+      )}
+    >
+      {children}
+    </button>
+  )
+}
+
 export function AccessibilityDock() {
   const [open, setOpen] = useState(false)
   const reduce = useReducedMotion()
   const root = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMounted(true), [])
+  const textSize = useTextSize()
 
   useEffect(() => {
     if (!open) return
@@ -69,39 +114,85 @@ export function AccessibilityDock() {
     }
   }, [open])
 
-  const enter = reduce ? { opacity: 0 } : { opacity: 0, scale: 0.92, y: 10 }
+  const enter = reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: 8 }
   const shown = { opacity: 1, scale: 1, y: 0 }
+  const current = mounted ? (theme ?? "system") : null
 
   return (
     <div
       ref={root}
-      className="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-45 flex flex-col items-end gap-2.5 print:hidden"
+      className="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-45 flex flex-col items-end gap-3 print:hidden"
     >
       <AnimatePresence>
         {open && (
           <motion.div
             role="dialog"
-            aria-labelledby="a11y-dock-title"
+            aria-labelledby="display-settings-title"
             initial={enter}
             animate={shown}
             exit={enter}
             transition={reduce ? { duration: 0.15 } : PANEL}
             style={{ originX: 1, originY: 1 }}
-            className="w-68 rounded-2xl border border-border bg-popover p-4 shadow-md"
+            className="w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-xl shadow-black/10"
           >
-            <div className="flex flex-col gap-4">
-              <span id="a11y-dock-title" className="text-sm font-semibold">
-                Accessibility
-              </span>
-              <Field label="Text size">
-                <TextSizeSelect className="w-full" />
-              </Field>
-              <Field label="Appearance">
-                <ThemeSelect className="w-full" />
-              </Field>
-              <Field label="Accent colour">
+            <div className="flex items-center gap-3 border-b border-border py-3 pr-2 pl-4">
+              <div className="min-w-0 flex-1">
+                <p id="display-settings-title" className="text-sm font-semibold">
+                  Display
+                </p>
+                <p className="truncate text-xs text-muted-foreground">Theme, text size and accent</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Close display settings"
+                onClick={() => {
+                  setOpen(false)
+                  trigger.current?.focus()
+                }}
+              >
+                <X />
+              </Button>
+            </div>
+
+            <div className="flex flex-col gap-5 p-4">
+              <Group label="Appearance">
+                <Choices label="Appearance">
+                  {THEMES.map(({ value, label, icon: Icon }) => (
+                    <Choice
+                      key={value}
+                      active={current === value}
+                      disabled={!mounted}
+                      onSelect={() => setTheme(value)}
+                    >
+                      <Icon className="size-4.5" />
+                      {label}
+                    </Choice>
+                  ))}
+                </Choices>
+              </Group>
+
+              <Group label="Text size">
+                <Choices label="Text size">
+                  {TEXT_SIZES.map((size) => (
+                    <Choice
+                      key={size}
+                      active={textSize.size === size}
+                      disabled={!textSize.ready}
+                      onSelect={() => textSize.setSize(size)}
+                    >
+                      <span aria-hidden className={cn("leading-none font-semibold", GLYPH[size])}>
+                        A
+                      </span>
+                      {TEXT_SIZE_LABELS[size]}
+                    </Choice>
+                  ))}
+                </Choices>
+              </Group>
+
+              <Group label="Accent colour">
                 <PrimaryColorPicker className="w-full flex-nowrap justify-between gap-0" />
-              </Field>
+              </Group>
             </div>
           </motion.div>
         )}
@@ -113,14 +204,25 @@ export function AccessibilityDock() {
         size="icon-lg"
         aria-expanded={open}
         aria-haspopup="dialog"
-        aria-label={open ? "Close accessibility settings" : "Accessibility settings"}
+        aria-label={open ? "Close display settings" : "Display settings"}
         onClick={() => setOpen((value) => !value)}
         className={cn(
           DOCK_BUTTON,
-          "aria-expanded:border-primary aria-expanded:bg-primary aria-expanded:text-primary-foreground dark:aria-expanded:border-primary dark:aria-expanded:bg-primary",
+          "relative aria-expanded:bg-foreground aria-expanded:text-background dark:aria-expanded:bg-foreground",
         )}
       >
-        <MenuGlyph open={open} reduce={reduce} />
+        <AnimatePresence initial={false} mode="popLayout">
+          <motion.span
+            key={open ? "close" : "open"}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, rotate: -45, scale: 0.6 }}
+            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, rotate: 45, scale: 0.6 }}
+            transition={{ duration: 0.18 }}
+            className="flex"
+          >
+            {open ? <X className="size-5" /> : <SlidersHorizontal className="size-5" />}
+          </motion.span>
+        </AnimatePresence>
       </Button>
     </div>
   )

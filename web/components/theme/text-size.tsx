@@ -15,6 +15,9 @@ const LABELS: Record<TextSize, string> = {
   "text-xl": "Larger",
 }
 
+export const TEXT_SIZES = SIZES
+export const TEXT_SIZE_LABELS = LABELS
+
 export const textSizeScript = `(function(){try{var s=localStorage.getItem(${JSON.stringify(KEY)});document.documentElement.classList.add(${JSON.stringify(
   SIZES,
 )}.indexOf(s)===-1?${JSON.stringify(DEFAULT)}:s)}catch(e){document.documentElement.classList.add(${JSON.stringify(
@@ -27,7 +30,8 @@ function apply(size: TextSize) {
   root.classList.add(size)
 }
 
-export function TextSizeSelect({ className }: { className?: string }) {
+/** The reader's text size, persisted; `ready` is false until it is read on the client. */
+export function useTextSize() {
   const [size, setSize] = React.useState<TextSize | undefined>(() => {
     if (typeof window === "undefined") return DEFAULT
     try {
@@ -49,12 +53,18 @@ export function TextSizeSelect({ className }: { className?: string }) {
     }
   }
 
+  return { size: size ?? DEFAULT, setSize: change, ready: Boolean(size) }
+}
+
+export function TextSizeSelect({ className }: { className?: string }) {
+  const { size, setSize, ready } = useTextSize()
+
   return (
     <NativeSelect
       className={className}
-      value={size ?? DEFAULT}
-      onChange={(e) => change(e.target.value as TextSize)}
-      disabled={!size}
+      value={size}
+      onChange={(e) => setSize(e.target.value as TextSize)}
+      disabled={!ready}
     >
       {SIZES.map((s) => (
         <NativeSelectOption key={s} value={s}>

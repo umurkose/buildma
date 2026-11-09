@@ -64,20 +64,20 @@ export const STEPS: { key: string; label: string; title: string; body: string }[
   {
     key: "build",
     label: "Build",
-    title: "Drag a block. That's the whole idea.",
-    body: "No template to fight, no table markup to nest. Take what the email needs, put it where it goes, and move it again whenever you change your mind.",
+    title: "Drop in blocks",
+    body: "Drag what the email needs onto the page. Reorder any time.",
   },
   {
     key: "style",
     label: "Style",
-    title: "Change it and see it, at once",
-    body: "Colour, size, corners, width — every control writes straight to the canvas. There is no preview button, because there is nothing left to preview.",
+    title: "Style it live",
+    body: "Colour, size, spacing — every change shows up instantly.",
   },
   {
     key: "export",
     label: "Export",
-    title: "Leave with a file you own",
-    body: "One .html, yours to keep. It opens in any editor, pastes into any sending platform, and never needs us again to render it.",
+    title: "Take the HTML",
+    body: "One .html file, ready for any sending platform.",
   },
 ]
 

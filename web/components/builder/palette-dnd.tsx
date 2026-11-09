@@ -16,7 +16,10 @@ import { cn } from "@/lib/utils"
 import { EMAIL_WIDTH, META, useBuilder, type BlockType } from "@/components/builder/store"
 
 type PaletteDnd = {
+  /** The email paper: rows are measured inside it. */
   contentRef: RefObject<HTMLDivElement | null>
+  /** The whole canvas column: a drop anywhere over it counts. */
+  zoneRef: RefObject<HTMLDivElement | null>
   active: BlockType | null
   dropY: number | null
   start: (type: BlockType, clientX: number, clientY: number) => void
@@ -37,6 +40,7 @@ export function PaletteDndProvider({ children }: { children: ReactNode }) {
   const insert = useBuilder((state) => state.insert)
 
   const contentRef = useRef<HTMLDivElement>(null)
+  const zoneRef = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState<BlockType | null>(null)
   const [over, setOver] = useState(false)
   const [dropY, setDropY] = useState<number | null>(null)
@@ -86,11 +90,17 @@ export function PaletteDndProvider({ children }: { children: ReactNode }) {
         return
       }
       const cr = content.getBoundingClientRect()
+      // The drop target is the whole canvas column, not just the paper. With one
+      // short block on the page, the paper is a thin strip, and a drop had to land
+      // on it — or within a few pixels of its edge — to count; anywhere in the grey
+      // around it did nothing. Over the canvas, the pointer's height alone decides
+      // the slot, so a release far below the last block appends to the email.
+      const zr = (zoneRef.current ?? content).getBoundingClientRect()
       const inside =
-        event.clientX >= cr.left - HIT_PAD &&
-        event.clientX <= cr.right + HIT_PAD &&
-        event.clientY >= cr.top - HIT_PAD &&
-        event.clientY <= cr.bottom + HIT_PAD
+        event.clientX >= Math.min(zr.left, cr.left - HIT_PAD) &&
+        event.clientX <= Math.max(zr.right, cr.right + HIT_PAD) &&
+        event.clientY >= Math.min(zr.top, cr.top - HIT_PAD) &&
+        event.clientY <= Math.max(zr.bottom, cr.bottom + HIT_PAD)
 
       if (inside) entered.current = true
       if (entered.current) {
@@ -161,7 +171,7 @@ export function PaletteDndProvider({ children }: { children: ReactNode }) {
   const Icon = meta?.icon
 
   return (
-    <Ctx.Provider value={{ contentRef, active, dropY, start }}>
+    <Ctx.Provider value={{ contentRef, zoneRef, active, dropY, start }}>
       {children}
 
       {active && meta && Icon && typeof document !== "undefined"

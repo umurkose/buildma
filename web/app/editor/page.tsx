@@ -12,9 +12,6 @@ import {
   type MotionValue,
 } from "motion/react"
 import {
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
   ArrowDown,
   ArrowUp,
   Bookmark,
@@ -22,6 +19,7 @@ import {
   ChevronLeft,
   Copy as CopyIcon,
   Download,
+  Eye,
   GripVertical,
   ImageOff,
   Mail,
@@ -31,7 +29,7 @@ import {
   Moon,
   Plus,
   Redo2,
-  RotateCcw,
+  SlidersHorizontal,
   Smartphone,
   Sun,
   Star,
@@ -56,15 +54,8 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { IndicatorFill, useIndicator } from "@/components/ui/indicator"
 import {
   Dialog,
   DialogContent,
@@ -75,42 +66,26 @@ import {
 import {
   blockFont,
   blockSpacing,
-  COLUMN_TYPES,
-  columnContentWidth,
+  columnsInset,
+  columnWidth,
   EMAIL_WIDTH,
-  FONT_KEYS,
-  FONT_WEIGHTS,
-  FONTS,
-  makeColumnChild,
+  inColumn,
   META,
-  PALETTE_GROUPS,
   parsePairs,
   PLACEHOLDERS,
   socialBadge,
   useBuilder,
-  type Align,
   type Block,
-  type BlockType,
   type Doc,
-  type FontKey,
 } from "@/components/builder/store"
 import { renderEmailHtml } from "@/components/builder/export"
+import { DARK_INK, LIGHT_INK, type Ink } from "@/components/builder/dark"
 import { APP_NAME } from "@/core/meta"
 import { HighlightedHtml } from "@/components/builder/highlight"
 import { DROP_INSET, PaletteDndProvider, usePaletteDnd } from "@/components/builder/palette-dnd"
-import dynamic from "next/dynamic"
-
-import { Skeleton } from "@/components/ui/skeleton"
-
-// Lazily, because tiptap/ProseMirror is a 466KB chunk — about a third of the editor's
-// initial JavaScript — for a field that only exists when a Rich Text block is
-// selected. Statically imported, every first-time visitor downloaded, parsed and
-// evaluated all of it before they could drag a single block, and most sessions never
-// insert one. `ssr: false` because the editor is a browser surface either way.
-const RichTextField = dynamic(
-  () => import("@/components/builder/rich-text").then((m) => m.RichTextField),
-  { ssr: false, loading: () => <Skeleton className="h-28 w-full rounded-lg" /> },
-)
+import { PaletteContent } from "@/components/builder/palette"
+import { InspectorPanel } from "@/components/builder/inspector"
+import { InboxPreview } from "@/components/builder/inbox-preview"
 
 const TOOLBAR_SPRING = { type: "spring", bounce: 0, duration: 0.35 } as const
 
@@ -180,14 +155,73 @@ export default function BuilderPage() {
       <PaletteDndProvider>
         <div className="flex min-h-0 flex-1 flex-col">
           <Topbar />
-          <div className="grid min-h-0 flex-1 grid-cols-1 sm:grid-cols-[20rem_minmax(0,1fr)_20rem]">
-            <Palette />
+          {/* Three columns only where three columns fit. Below that, the canvas
+              takes the width and the palette and inspector open as sheets. */}
+          <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[17rem_minmax(0,1fr)_19rem] xl:grid-cols-[18rem_minmax(0,1fr)_20rem]">
+            <aside
+              aria-label="Blocks"
+              className="hidden min-h-0 flex-col overflow-hidden border-r border-border bg-background lg:flex"
+            >
+              <PaletteContent />
+            </aside>
             <Canvas />
-            <Inspector />
+            <aside
+              aria-label="Inspector"
+              className="hidden min-h-0 flex-col overflow-hidden border-l border-border bg-background lg:flex"
+            >
+              <InspectorPanel />
+            </aside>
           </div>
+          <CompactPanels />
         </div>
       </PaletteDndProvider>
     </PreviewProvider>
+  )
+}
+
+// Below the three-column width: an "Add block" button for the palette and an
+// "Edit" button for the inspector, each opening its panel as a sheet.
+function CompactPanels() {
+  const [panel, setPanel] = useState<"blocks" | "edit" | null>(null)
+  const selected = useBuilder((state) => state.selectedId !== null)
+
+  return (
+    <>
+      <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 z-40 flex gap-2 lg:hidden print:hidden">
+        <Button className="h-11 rounded-full px-4 shadow-lg" onClick={() => setPanel("blocks")}>
+          <Plus data-icon="inline-start" />
+          Add block
+        </Button>
+        <Button
+          variant="outline"
+          className="h-11 rounded-full bg-background px-4 shadow-lg dark:bg-background"
+          onClick={() => setPanel("edit")}
+        >
+          <SlidersHorizontal data-icon="inline-start" />
+          {selected ? "Edit block" : "Email"}
+        </Button>
+      </div>
+
+      <Sheet open={panel === "blocks"} onOpenChange={(open) => !open && setPanel(null)}>
+        <SheetContent side="left" className="w-[19rem] gap-0 p-0 sm:max-w-[19rem]">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Blocks</SheetTitle>
+            <SheetDescription>Tap a block to add it to the email.</SheetDescription>
+          </SheetHeader>
+          <PaletteContent compact onPick={() => setPanel(null)} />
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={panel === "edit"} onOpenChange={(open) => !open && setPanel(null)}>
+        <SheetContent side="right" className="w-[21rem] gap-0 p-0 sm:max-w-[21rem]">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Inspector</SheetTitle>
+            <SheetDescription>Edit the selected block or the email.</SheetDescription>
+          </SheetHeader>
+          <InspectorPanel inSheet />
+        </SheetContent>
+      </Sheet>
+    </>
   )
 }
 
@@ -255,6 +289,7 @@ function Topbar() {
   const reduce = useReducedMotion()
   const [preview, setPreview] = useState<string | null>(null)
   const [downloadOpen, setDownloadOpen] = useState(false)
+  const [inboxOpen, setInboxOpen] = useState(false)
   const undo = useBuilder((s) => s.undo)
   const redo = useBuilder((s) => s.redo)
   const clear = useBuilder((s) => s.clear)
@@ -302,7 +337,9 @@ function Topbar() {
   return (
     <header className="flex h-12 shrink-0 items-center gap-1 border-b border-border px-3">
       <IconAction icon={<ChevronLeft />} label="Home" onClick={onHome} className="-ml-1" />
-      <span className="mr-auto text-sm font-medium">Email Editor</span>
+      <span className="mr-auto min-w-0 truncate text-sm font-medium">
+        <span className="hidden sm:inline">Email Editor</span>
+      </span>
 
       <motion.div
         layout
@@ -310,6 +347,20 @@ function Topbar() {
         className="flex items-center gap-1 self-stretch"
       >
         <PreviewToggle />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              disabled={!hasBlocks}
+              onClick={() => setInboxOpen(true)}
+              aria-label="Preview"
+            >
+              <Eye />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Preview</TooltipContent>
+        </Tooltip>
         <ThemeToggle />
       </motion.div>
 
@@ -352,17 +403,17 @@ function Topbar() {
           >
             {[
               <div key="sep" className="mx-1 h-5 w-px shrink-0 self-center bg-border" />,
-              <Button key="copy" variant="ghost" size="sm" onClick={() => setPreview(build())}>
-                <CopyIcon data-icon="inline-start" />
-                Copy
+              <Button key="copy" variant="ghost" size="sm" onClick={() => setPreview(build())} aria-label="Copy HTML">
+                <CopyIcon />
+                <span className="hidden md:inline">Copy</span>
               </Button>,
-              <Button key="save" variant="secondary" size="sm" disabled>
+              <Button key="save" variant="secondary" size="sm" disabled className="hidden md:inline-flex">
                 <Bookmark data-icon="inline-start" />
                 Save
               </Button>,
-              <Button key="dl" size="sm" onClick={() => setDownloadOpen(true)}>
-                <Download data-icon="inline-start" />
-                Download
+              <Button key="dl" size="sm" onClick={() => setDownloadOpen(true)} aria-label="Download HTML">
+                <Download />
+                <span className="hidden sm:inline">Download</span>
               </Button>,
             ].map((child) => (
               <motion.div
@@ -382,6 +433,7 @@ function Topbar() {
       </AnimatePresence>
 
       <CodeDialog html={preview} blockTypes={blockTypes} onClose={() => setPreview(null)} />
+      <InboxPreview open={inboxOpen} onOpenChange={setInboxOpen} />
 
       <Dialog
         open={downloadOpen}
@@ -633,100 +685,6 @@ function CodeDialog({
   )
 }
 
-function Palette() {
-  const add = useBuilder((state) => state.add)
-  const { start, active } = usePaletteDnd()
-  const dragging = useRef(false)
-
-  return (
-    <aside className="hidden overflow-y-auto border-r border-border bg-background sm:block">
-      <div className="flex flex-col">
-        {PALETTE_GROUPS.map((group) => (
-          <div
-            key={group.label}
-            className="flex w-full min-w-0 flex-col gap-2 px-4 py-4 not-first:border-t not-first:border-border"
-          >
-            <h3 className="shrink-0 text-xs font-semibold tracking-wide text-muted-foreground capitalize select-none">
-              {group.label}
-            </h3>
-            {group.types.map((type) => {
-              const { label, icon: Icon } = META[type]
-              const dragActive = active === type
-              return (
-                <button
-                  key={type}
-                  type="button"
-                  title={label}
-                  onPointerDown={(event) => {
-                    dragging.current = false
-                    const startX = event.clientX
-                    const startY = event.clientY
-                    const { pointerId } = event
-                    const controller = new AbortController()
-                    // window, not the button. A mouse pointer gets no implicit
-                    // capture (the spec grants that to touch and pen only), so
-                    // pointermove goes to whatever is under the cursor — and one
-                    // 60Hz frame of a normal flick covers more than this 34px row.
-                    // Bound to the button, a quick drag delivered neither move nor
-                    // up: the gesture died silently AND the listener outlived it,
-                    // so later merely HOVERING the row measured against a stale
-                    // start point, cleared 6px, and began a real drag with no
-                    // button held.
-                    const done = () => controller.abort()
-                    window.addEventListener(
-                      "pointermove",
-                      (ev: PointerEvent) => {
-                        if (ev.pointerId !== pointerId) return
-                        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return
-                        dragging.current = true
-                        controller.abort()
-                        start(type, ev.clientX, ev.clientY)
-                      },
-                      { signal: controller.signal },
-                    )
-                    window.addEventListener("pointerup", done, { signal: controller.signal })
-                    window.addEventListener("pointercancel", done, { signal: controller.signal })
-                  }}
-                  onClick={() => {
-                    if (!dragging.current) add(type)
-                  }}
-                  className={cn(
-                    "group flex w-full touch-none items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-all duration-200 ease-out select-none",
-                    dragActive
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-muted/40 text-sidebar-foreground hover:border-primary/40",
-                    "active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "flex size-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200 ease-out [&_svg]:size-4",
-                      dragActive
-                        ? "bg-white/20 text-primary-foreground"
-                        : "bg-transparent text-primary group-hover:bg-primary/10",
-                    )}
-                  >
-                    <Icon />
-                  </span>
-                  <span className="flex-1 truncate text-xs font-semibold">{label}</span>
-                  <GripVertical
-                    className={cn(
-                      "size-3.5 shrink-0 transition-all duration-200 ease-out",
-                      dragActive
-                        ? "text-primary-foreground/70"
-                        : "text-muted-foreground/50 group-hover:text-primary",
-                    )}
-                  />
-                </button>
-              )
-            })}
-          </div>
-        ))}
-      </div>
-    </aside>
-  )
-}
-
 function DropLineBody() {
   return (
     <>
@@ -899,7 +857,8 @@ function SelectionFrame({
 }
 
 type Preview = "desktop" | "mobile"
-const PREVIEW_WIDTH: Record<Preview, number> = { desktop: EMAIL_WIDTH, mobile: 390 }
+// Mobile is the email's column on a 390px phone, after the email's 12px side gutters.
+const PREVIEW_WIDTH: Record<Preview, number> = { desktop: EMAIL_WIDTH, mobile: 366 }
 
 const PreviewContext = createContext<{ preview: Preview; setPreview: (value: Preview) => void }>({
   preview: "desktop",
@@ -953,109 +912,137 @@ function dotColor(background: string): string {
   return luminance > 0.5 ? "rgba(0,0,0,0.14)" : "rgba(255,255,255,0.16)"
 }
 
+// The email's colours for this render: as designed, or their dark-mode
+// counterparts when the editor is dark and the email adapts (see dark.ts) — the
+// same mapping the exported HTML ships, so a dark editor shows the dark inbox.
+const InkContext = createContext<Ink>(LIGHT_INK)
+
+function useEmailInk(doc: Doc): Ink {
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMounted(true), [])
+  return mounted && resolvedTheme === "dark" && doc.darkMode !== "fixed" ? DARK_INK : LIGHT_INK
+}
+
 function Canvas() {
   const blocks = useBuilder((state) => state.blocks)
   const reorder = useBuilder((state) => state.reorder)
   const select = useBuilder((state) => state.select)
   const doc = useBuilder((state) => state.doc)
+  const ink = useEmailInk(doc)
 
   const order = blocks.map((block) => block.id)
 
-  const { contentRef, active: draggingType, dropY } = usePaletteDnd()
+  const { contentRef, zoneRef, active: draggingType, dropY } = usePaletteDnd()
   const { preview } = useContext(PreviewContext)
 
   const reorderY = useMotionValue(0)
   const reorderOn = useMotionValue(0)
 
-  return (
-    <motion.div
-      layoutScroll
-      className="min-w-0 overflow-y-auto bg-size-[16px_16px]"
-      style={{
-        backgroundColor: doc.background,
-        backgroundImage: `radial-gradient(${dotColor(doc.background)} 1px, transparent 1px)`,
-      }}
-      onClick={() => select(null)}
-    >
-      <div
-        className="mx-auto flex min-h-full w-full flex-col p-[30px] transition-[max-width] duration-300 ease-out motion-reduce:transition-none"
-        style={{ maxWidth: PREVIEW_WIDTH[preview] + 60 }}
-      >
-        {blocks.length === 0 ? (
-          <Empty
-            ref={contentRef}
-            className={cn(
-              "mx-auto border border-dashed transition-[max-width,border-color] duration-300 ease-out motion-reduce:transition-none",
-              draggingType !== null ? "border-primary" : "border-neutral-300",
-            )}
-            // The empty state IS the paper, so it wears the document's own colour and
-            // does not follow the app theme. An email is the colour it is in an inbox;
-            // a placeholder that turns dark with the editor is showing you the app,
-            // not the thing you are making — and it made the blank page and the first
-            // block look like two different surfaces.
-            style={{ maxWidth: PREVIEW_WIDTH[preview], backgroundColor: doc.contentBackground }}
-          >
-            <EmptyHeader
-              className={cn(
-                "transition-opacity duration-200 ease-out",
-                draggingType !== null && "opacity-25",
-              )}
-            >
-              {/* Fixed ink, for the same reason as the surface: these sit ON the
-                  paper, so they take the paper's contrast, not the theme's. */}
-              <EmptyMedia className="-rotate-6 text-primary">
-                <Mail className="size-12" />
-              </EmptyMedia>
-              <EmptyTitle className="text-base text-neutral-900">Your email is empty</EmptyTitle>
-              <EmptyDescription className="max-w-56 text-neutral-500">
-                Add a block from the palette on the left to start designing.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : (
-          <div
-            ref={contentRef}
-            className="relative mx-auto w-full transition-[max-width] duration-300 ease-out motion-reduce:transition-none"
-            style={{ maxWidth: PREVIEW_WIDTH[preview], backgroundColor: doc.contentBackground }}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <Reorder.Group as="div" axis="y" values={order} onReorder={reorder}>
-              {blocks.map((block, index) => (
-                <BlockRow
-                  key={block.id}
-                  block={block}
-                  index={index}
-                  isLast={index === blocks.length - 1}
-                  doc={doc}
-                  contentBackground={doc.contentBackground}
-                  contentRef={contentRef}
-                  reorderY={reorderY}
-                  reorderOn={reorderOn}
-                  paletteActive={draggingType !== null}
-                />
-              ))}
-            </Reorder.Group>
+  const wall = ink.fill(doc.background)
+  const paper = ink.fill(doc.contentBackground)
 
-            {draggingType !== null && dropY !== null && (
-              <div
+  return (
+    <InkContext value={ink}>
+      <motion.div
+        ref={zoneRef}
+        layoutScroll
+        className="min-w-0 overflow-y-auto bg-size-[16px_16px]"
+        style={{
+          backgroundColor: wall,
+          backgroundImage: `radial-gradient(${dotColor(wall)} 1px, transparent 1px)`,
+        }}
+        onClick={() => select(null)}
+      >
+        <div
+          className="mx-auto flex min-h-full w-full flex-col px-[30px] pt-[30px] pb-28 transition-[max-width] duration-300 ease-out motion-reduce:transition-none lg:pb-[30px]"
+          style={{ maxWidth: PREVIEW_WIDTH[preview] + 60 }}
+        >
+          {blocks.length === 0 ? (
+            <Empty
+              ref={contentRef}
+              className={cn(
+                "mx-auto w-full border border-dashed transition-[max-width,border-color] duration-300 ease-out motion-reduce:transition-none",
+                draggingType !== null && "border-primary",
+              )}
+              // The empty state IS the paper, so it wears the document's own colour
+              // (through the same ink as the blocks), not the app's: an email is the
+              // colour it is in an inbox.
+              style={{
+                maxWidth: PREVIEW_WIDTH[preview],
+                backgroundColor: paper,
+                borderColor: draggingType !== null ? undefined : ink.fill("#d4d4d4"),
+              }}
+            >
+              <EmptyHeader
+                className={cn(
+                  "transition-opacity duration-200 ease-out",
+                  draggingType !== null && "opacity-25",
+                )}
+              >
+                <EmptyMedia className="text-primary">
+                  <Mail className="size-12" />
+                </EmptyMedia>
+                <EmptyTitle
+                  className="text-base"
+                  style={{ color: ink.text("#171717", doc.contentBackground) }}
+                >
+                  Your email is empty
+                </EmptyTitle>
+                <EmptyDescription
+                  className="max-w-56"
+                  style={{ color: ink.text("#737373", doc.contentBackground) }}
+                >
+                  Add a block from the palette, or drag one anywhere onto this canvas.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : (
+            <div
+              ref={contentRef}
+              className="relative mx-auto w-full transition-[max-width] duration-300 ease-out motion-reduce:transition-none"
+              style={{ maxWidth: PREVIEW_WIDTH[preview], backgroundColor: paper }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <Reorder.Group as="div" axis="y" values={order} onReorder={reorder}>
+                {blocks.map((block, index) => (
+                  <BlockRow
+                    key={block.id}
+                    block={block}
+                    index={index}
+                    isLast={index === blocks.length - 1}
+                    doc={doc}
+                    contentBackground={paper}
+                    contentRef={contentRef}
+                    reorderY={reorderY}
+                    reorderOn={reorderOn}
+                    paletteActive={draggingType !== null}
+                  />
+                ))}
+              </Reorder.Group>
+
+              {draggingType !== null && dropY !== null && (
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-0 z-40 flex -translate-y-1/2 items-center gap-1.5"
+                  style={{ top: dropY }}
+                >
+                  <DropLineBody />
+                </div>
+              )}
+              <motion.div
                 aria-hidden
                 className="pointer-events-none absolute inset-x-0 z-40 flex -translate-y-1/2 items-center gap-1.5"
-                style={{ top: dropY }}
+                style={{ top: reorderY, opacity: reorderOn }}
               >
                 <DropLineBody />
-              </div>
-            )}
-            <motion.div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 z-40 flex -translate-y-1/2 items-center gap-1.5"
-              style={{ top: reorderY, opacity: reorderOn }}
-            >
-              <DropLineBody />
-            </motion.div>
-          </div>
-        )}
-      </div>
-    </motion.div>
+              </motion.div>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </InkContext>
   )
 }
 
@@ -1236,11 +1223,26 @@ function BlockRow({
   )
 }
 
+// How a block looks in the email, drawn on the canvas. Mirrors the exporter
+// (components/builder/export.ts): the same spacing, the same column geometry, the
+// same fixed colours — all read through the ink, so a dark editor shows the dark
+// inbox version.
+const PLACEHOLDER_INK = "#9ca3af"
+const TABLE_BORDER = "#e5e7eb"
+const TABLE_HEADER_BG = "#f9fafb"
+const MENU_DOT = "#d1d5db"
+const LINK = "#2563eb"
+
 const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Block; doc: Doc }) {
+  const ink = useContext(InkContext)
   const { x, y } = blockSpacing(block, doc)
   const padding = `${y}px ${x}px`
   const fontFamily = blockFont(block, doc)
-  const band = block.background && block.background !== "transparent" ? block.background : undefined
+  const hasBand = Boolean(block.background) && block.background !== "transparent"
+  const band = hasBand ? ink.fill(block.background) : undefined
+  // The fill this block's text sits on — its own band, or the paper.
+  const ground = hasBand ? block.background : doc.contentBackground
+  const color = ink.text(block.color, ground)
   const justify =
     block.align === "center" ? "center" : block.align === "right" ? "flex-end" : "flex-start"
 
@@ -1252,13 +1254,13 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
             padding,
             fontFamily,
             backgroundColor: band,
-            color: block.color,
+            color,
             fontSize: block.fontSize,
             lineHeight: 1.3,
             fontWeight: block.fontWeight,
             textAlign: block.align,
             whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
+            overflowWrap: "break-word",
           }}
         >
           {block.text || PLACEHOLDERS.heading}
@@ -1272,13 +1274,13 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
             padding,
             fontFamily,
             backgroundColor: band,
-            color: block.color,
+            color,
             fontSize: block.fontSize,
             lineHeight: block.lineHeight,
             fontWeight: block.fontWeight,
             textAlign: block.align,
             whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
+            overflowWrap: "break-word",
           }}
         >
           {block.text || PLACEHOLDERS.text}
@@ -1291,17 +1293,18 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
         padding,
         fontFamily,
         backgroundColor: band,
-        color: block.color,
+        color,
         fontSize: block.fontSize,
         lineHeight: block.lineHeight,
         textAlign: block.align,
-        wordBreak: "break-word" as const,
-      }
+        overflowWrap: "break-word" as const,
+        "--link": ink.text(LINK, ground),
+      } as React.CSSProperties
       return emptyRich ? (
         <div style={richStyle}>{PLACEHOLDERS.richtext}</div>
       ) : (
         <div
-          className="[&_a]:text-[#2563eb] [&_a]:underline [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:m-0 [&_p:not(:last-child)]:mb-4 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-6"
+          className="[&_a]:text-(--link) [&_a]:underline [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:m-0 [&_p:not(:last-child)]:mb-4 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-6"
           style={richStyle}
           dangerouslySetInnerHTML={{ __html: block.html }}
         />
@@ -1316,15 +1319,17 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
             style={{
               display: full ? "block" : "inline-block",
               width: full ? "100%" : undefined,
+              maxWidth: "100%",
               boxSizing: "border-box",
               textAlign: "center",
               padding: "12px 24px",
-              backgroundColor: block.background,
-              color: block.color,
+              backgroundColor: ink.fill(block.background),
+              color: ink.text(block.color, block.background),
               fontSize: block.fontSize,
               fontWeight: block.fontWeight,
               lineHeight: 1,
               borderRadius: block.radius,
+              overflowWrap: "break-word",
             }}
           >
             {block.text || PLACEHOLDERS.button}
@@ -1336,7 +1341,7 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
     case "divider":
       return (
         <div style={{ padding, fontFamily }}>
-          <div style={{ borderTop: `${block.thickness}px solid ${block.color}` }} />
+          <div style={{ borderTop: `${block.thickness}px solid ${ink.fill(block.color)}` }} />
         </div>
       )
 
@@ -1359,11 +1364,11 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
               paddingLeft: block.listStyle === "none" ? 0 : 24,
               listStyleType:
                 block.listStyle === "numbered" ? "decimal" : block.listStyle === "none" ? "none" : "disc",
-              color: empty ? "#9ca3af" : block.color,
+              color: empty ? ink.text(PLACEHOLDER_INK, ground) : color,
               fontSize: block.fontSize,
               lineHeight: block.lineHeight,
               textAlign: block.align,
-              wordBreak: "break-word",
+              overflowWrap: "break-word",
             }}
           >
             {items.map((item, index) => (
@@ -1380,11 +1385,11 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
       const rows = block.text.trim()
         ? block.text.split(/\r?\n/).map((row) => row.split(" | "))
         : null
-      const cellBorder = block.borders ? "1px solid #e5e7eb" : undefined
+      const cellBorder = block.borders ? `1px solid ${ink.fill(TABLE_BORDER)}` : undefined
       return (
         <div style={{ padding, fontFamily, backgroundColor: band }}>
           {rows ? (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
               <tbody>
                 {rows.map((cells, rowIndex) => {
                   const header = block.headerRow && rowIndex === 0
@@ -1395,14 +1400,14 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
                           key={colIndex}
                           style={{
                             border: cellBorder,
-                            backgroundColor: header ? "#f9fafb" : undefined,
+                            backgroundColor: header ? ink.fill(TABLE_HEADER_BG) : undefined,
                             padding: "8px 12px",
-                            color: block.color,
+                            color: ink.text(block.color, header ? TABLE_HEADER_BG : ground),
                             fontSize: block.fontSize,
                             lineHeight: 1.4,
                             fontWeight: header ? 700 : block.fontWeight,
                             textAlign: block.align,
-                            wordBreak: "break-word",
+                            overflowWrap: "break-word",
                           }}
                         >
                           {cellText}
@@ -1416,11 +1421,11 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
           ) : (
             <div
               style={{
-                color: "#9ca3af",
+                color: ink.text(PLACEHOLDER_INK, ground),
                 fontSize: block.fontSize,
                 lineHeight: 1.4,
                 whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
+                overflowWrap: "break-word",
               }}
             >
               {PLACEHOLDERS.table}
@@ -1433,16 +1438,16 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
     case "quote":
       return (
         <div style={{ padding, fontFamily }}>
-          <div style={{ borderLeft: `4px solid ${block.background}`, paddingLeft: 16 }}>
+          <div style={{ borderLeft: `4px solid ${ink.fill(block.background)}`, paddingLeft: 16 }}>
             <div
               style={{
-                color: block.color,
+                color: ink.text(block.color, doc.contentBackground),
                 fontSize: block.fontSize,
                 lineHeight: block.lineHeight,
                 fontStyle: "italic",
                 textAlign: block.align,
                 whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
+                overflowWrap: "break-word",
               }}
             >
               {block.text || PLACEHOLDERS.quote}
@@ -1451,11 +1456,11 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
               <div
                 style={{
                   marginTop: 8,
-                  color: block.authorColor,
+                  color: ink.text(block.authorColor, doc.contentBackground),
                   fontSize: Math.max(12, Math.round(block.fontSize * 0.75)),
                   lineHeight: 1.4,
                   textAlign: block.align,
-                  wordBreak: "break-word",
+                  overflowWrap: "break-word",
                 }}
               >
                 {`— ${block.author}`}
@@ -1470,15 +1475,15 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
         <div style={{ padding, fontFamily }}>
           <div
             style={{
-              backgroundColor: block.background,
-              color: block.color,
+              backgroundColor: ink.fill(block.background),
+              color: ink.text(block.color, block.background),
               borderRadius: block.radius,
               padding: "16px 20px",
               fontSize: block.fontSize,
               lineHeight: block.lineHeight,
               textAlign: block.align,
               whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
+              overflowWrap: "break-word",
             }}
           >
             {block.text || PLACEHOLDERS.callout}
@@ -1500,12 +1505,20 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
               justifyContent: justify,
               fontSize: block.fontSize,
               fontWeight: block.fontWeight,
+              lineHeight: 2,
             }}
           >
             {items.map((item, index) => (
               <span key={index} style={{ display: "inline-flex", alignItems: "center" }}>
-                {index > 0 && <span style={{ color: "#d1d5db", padding: "0 8px" }}>·</span>}
-                <span style={{ color: empty ? "#9ca3af" : block.color, whiteSpace: "nowrap" }}>
+                {index > 0 && (
+                  <span style={{ color: ink.text(MENU_DOT, doc.contentBackground), padding: "0 8px" }}>·</span>
+                )}
+                <span
+                  style={{
+                    color: empty ? ink.text(PLACEHOLDER_INK, doc.contentBackground) : ink.text(block.color, doc.contentBackground),
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {item.label}
                 </span>
               </span>
@@ -1532,8 +1545,8 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
                     width: 32,
                     height: 32,
                     borderRadius: 16,
-                    backgroundColor: badge.bg,
-                    color: "#ffffff",
+                    backgroundColor: ink.fill(badge.bg),
+                    color: ink.text("#ffffff", badge.bg),
                     fontSize: 12,
                     fontWeight: 700,
                   }}
@@ -1548,24 +1561,22 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
     }
 
     case "columns": {
-      const colMax = Math.floor(
-        (EMAIL_WIDTH - x * 2) / Math.max(1, block.children.length),
-      )
+      // The exporter's geometry: the block is inset by its spacing less half a
+      // column gap, each column is `colMax` wide and its content half a gap in, so
+      // the outer columns' content lines up with every other block. Columns sit side
+      // by side where they fit and stack full-width where they don't — exactly what
+      // the email does on a phone.
+      const colMax = columnWidth(block, doc)
+      const kids = block.children.map(inColumn)
       const fit = (child: Block): Block =>
         child.type === "image"
-          ? {
-              ...child,
-              width: Math.min(child.width, Math.max(40, colMax - blockSpacing(child, doc).x * 2)),
-            }
+          ? { ...child, width: Math.min(child.width, Math.max(40, colMax - blockSpacing(child, doc).x * 2)) }
           : child
       return (
-        <div style={{ padding, fontFamily }}>
-          <div style={{ display: "flex", alignItems: "flex-start" }}>
-            {block.children.map((child) => (
-              <div
-                key={child.id}
-                style={{ width: `${100 / Math.max(1, block.children.length)}%`, minWidth: 0 }}
-              >
+        <div style={{ padding: `${y}px ${columnsInset(block, doc)}px`, fontFamily }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "center" }}>
+            {kids.map((child) => (
+              <div key={child.id} style={{ flex: `1 1 ${colMax}px`, maxWidth: "100%", minWidth: 0 }}>
                 <BlockPreview block={fit(child)} doc={doc} />
               </div>
             ))}
@@ -1591,7 +1602,14 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
               }}
             />
           ) : (
-            <div className="flex w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed border-neutral-300 bg-neutral-50 py-10 text-center text-neutral-400">
+            <div
+              className="flex w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed py-10 text-center"
+              style={{
+                backgroundColor: ink.fill("#fafafa"),
+                borderColor: ink.fill("#d4d4d4"),
+                color: ink.text("#a3a3a3", "#fafafa"),
+              }}
+            >
               <ImageOff className="size-5" />
               <span className="text-xs">Add an image URL in the panel</span>
             </div>
@@ -1600,829 +1618,3 @@ const BlockPreview = memo(function BlockPreviewImpl({ block, doc }: { block: Blo
       )
   }
 })
-
-type Tab = "element" | "body"
-
-function Inspector() {
-  const selectedId = useBuilder((state) => state.selectedId)
-  const block = useBuilder((state) => state.blocks.find((b) => b.id === selectedId) ?? null)
-  const [tab, setTab] = useState<Tab>(selectedId ? "element" : "body")
-
-  const [prevSelected, setPrevSelected] = useState(selectedId)
-  if (selectedId !== prevSelected) {
-    setPrevSelected(selectedId)
-    setTab(selectedId ? "element" : "body")
-  }
-
-  return (
-    <aside className="hidden min-h-0 flex-col overflow-hidden border-l border-border bg-background sm:flex">
-      <Tabs
-        value={tab}
-        onValueChange={(value) => setTab(value as Tab)}
-        className="flex min-h-0 flex-1 flex-col gap-0"
-      >
-        <div className="flex h-12 shrink-0 items-center border-b border-border px-4">
-          <TabsList className="w-full">
-            <TabsTrigger value="element" disabled={!selectedId}>
-              Element
-            </TabsTrigger>
-            <TabsTrigger value="body">Body</TabsTrigger>
-          </TabsList>
-        </div>
-
-        <TabsContent value="element" className="min-h-0 flex-1 overflow-y-auto">
-          {block ? <BlockInspector block={block} /> : null}
-        </TabsContent>
-
-        <TabsContent value="body" className="min-h-0 flex-1 overflow-y-auto">
-          <BodyInspector />
-        </TabsContent>
-      </Tabs>
-    </aside>
-  )
-}
-
-function BlockInspector({ block }: { block: Block }) {
-  const update = useBuilder((state) => state.update)
-  const reset = useBuilder((state) => state.reset)
-  const remove = useBuilder((state) => state.remove)
-
-  const doc = useBuilder((state) => state.doc)
-  const set = (patch: Partial<Block>, tag?: string | null) => update(block.id, patch, tag)
-  const imageMax = EMAIL_WIDTH - blockSpacing(block, doc).x * 2
-  const isText = block.type === "heading" || block.type === "text" || block.type === "richtext"
-  const meta = META[block.type]
-  const TypeIcon = meta.icon
-  const hasColor =
-    isText || ["button", "list", "table", "quote", "callout", "menu", "divider"].includes(block.type)
-  const hasSpacing = block.type !== "spacer"
-  const hasDimension =
-    isText ||
-    ["button", "image", "list", "table", "quote", "callout", "menu", "divider", "spacer"].includes(
-      block.type,
-    )
-  const hasSize = hasDimension || hasSpacing
-  const hasFont =
-    isText || ["list", "quote", "callout", "table", "button", "menu"].includes(block.type)
-  const hasAlign = !["divider", "columns", "spacer"].includes(block.type)
-  const hasTypeOptions = ["button", "list", "table"].includes(block.type)
-  const hasSelects = hasFont || hasAlign || hasTypeOptions
-
-  return (
-    <div className="flex flex-col">
-      <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background px-4 py-3">
-        <TypeIcon className="size-4 text-primary" />
-        <span className="text-sm font-medium">{meta.label}</span>
-      </div>
-      <div className="flex flex-col gap-4 p-4">
-        {isText && (
-          <Field label="Content">
-            {block.type === "richtext" ? (
-              <RichTextField key={block.id} value={block.html} onChange={(html) => set({ html })} />
-            ) : (
-              <Textarea
-                value={block.text}
-                onChange={(e) => set({ text: e.target.value })}
-                rows={4}
-                placeholder={PLACEHOLDERS[block.type]}
-              />
-            )}
-          </Field>
-        )}
-        {block.type === "button" && (
-          <>
-            <Field label="Label">
-              <Input value={block.text} onChange={(e) => set({ text: e.target.value })} placeholder={PLACEHOLDERS.button} />
-            </Field>
-            <Field label="Link URL">
-              <Input value={block.href} onChange={(e) => set({ href: e.target.value })} placeholder="https://…" />
-            </Field>
-          </>
-        )}
-        {block.type === "image" && (
-          <>
-            <Field label="Image URL">
-              <Input value={block.src} onChange={(e) => set({ src: e.target.value })} placeholder="https://…/photo.png" />
-            </Field>
-            <Field label="Alt text">
-              <Input value={block.alt} onChange={(e) => set({ alt: e.target.value })} placeholder="Alt text" />
-            </Field>
-            <Field label="Link URL (optional)">
-              <Input value={block.href} onChange={(e) => set({ href: e.target.value })} placeholder="https://…" />
-            </Field>
-          </>
-        )}
-        {block.type === "list" && (
-          <Field label="Items">
-            <Textarea value={block.text} onChange={(e) => set({ text: e.target.value })} rows={5} placeholder={PLACEHOLDERS.list} />
-          </Field>
-        )}
-        {block.type === "table" && (
-          <Field label="Table">
-            <TableEditor value={block.text} onChange={(text) => set({ text })} />
-          </Field>
-        )}
-        {block.type === "quote" && (
-          <>
-            <Field label="Quote">
-              <Textarea value={block.text} onChange={(e) => set({ text: e.target.value })} rows={4} placeholder={PLACEHOLDERS.quote} />
-            </Field>
-            <Field label="Author">
-              <Input value={block.author} onChange={(e) => set({ author: e.target.value })} placeholder="Author (optional)" />
-            </Field>
-          </>
-        )}
-        {block.type === "callout" && (
-          <Field label="Content">
-            <Textarea value={block.text} onChange={(e) => set({ text: e.target.value })} rows={3} placeholder={PLACEHOLDERS.callout} />
-          </Field>
-        )}
-        {block.type === "menu" && (
-          <Field label="Links">
-            <LinkRowsField value={block.text} onChange={(text) => set({ text })} labelPlaceholder="Label" addLabel="Add link" />
-          </Field>
-        )}
-        {block.type === "social" && (
-          <>
-            <Field label="Profiles">
-              <LinkRowsField value={block.text} onChange={(text) => set({ text })} labelPlaceholder="network" addLabel="Add profile" />
-            </Field>
-            <p className="-mt-1 text-xs text-muted-foreground">
-              Known: x, instagram, facebook, linkedin, youtube, tiktok, github, email, website.
-            </p>
-          </>
-        )}
-        {block.type === "columns" && <ColumnsFields block={block} set={set} />}
-      </div>
-
-      <div className="flex flex-col">
-        {hasColor && (
-          <InspectorGroup>
-            {(isText || block.type === "callout") && (
-              <>
-                <ColorField label="Text" value={block.color} onChange={(color) => set({ color })} />
-                <ColorField label="Background" value={block.background} onChange={(background) => set({ background })} />
-              </>
-            )}
-            {block.type === "button" && (
-              <>
-                <ColorField label="Text" value={block.color} onChange={(color) => set({ color })} />
-                <ColorField label="Background" value={block.background} onChange={(background) => set({ background })} />
-              </>
-            )}
-            {(block.type === "list" || block.type === "menu" || block.type === "divider") && (
-              <ColorField label="Colour" value={block.color} onChange={(color) => set({ color })} />
-            )}
-            {block.type === "table" && (
-              <ColorField label="Text" value={block.color} onChange={(color) => set({ color })} />
-            )}
-            {block.type === "quote" && (
-              <>
-                <ColorField label="Text" value={block.color} onChange={(color) => set({ color })} />
-                <ColorField label="Author" value={block.authorColor} onChange={(authorColor) => set({ authorColor })} />
-                <ColorField label="Accent" value={block.background} onChange={(background) => set({ background })} />
-              </>
-            )}
-          </InspectorGroup>
-        )}
-
-        {hasSize && (
-          <InspectorGroup>
-            {!hasDimension ? null : block.type === "image" ? (
-              <SliderField label="Width" value={Math.min(block.width, imageMax)} min={80} max={imageMax} step={1} suffix="px" onChange={(width) => set({ width })} />
-            ) : block.type === "divider" ? (
-              <SliderField label="Thickness" value={block.thickness} min={1} max={8} step={1} suffix="px" onChange={(thickness) => set({ thickness })} />
-            ) : block.type === "spacer" ? (
-              <SliderField label="Height" value={block.height} min={8} max={120} step={2} suffix="px" onChange={(height) => set({ height })} />
-            ) : (
-              <>
-                <SliderField label="Size" value={block.fontSize} min={12} max={56} step={1} suffix="px" onChange={(fontSize) => set({ fontSize })} />
-                {(block.type === "heading" || block.type === "text" || block.type === "button" || block.type === "menu") && (
-                  <WeightField value={block.fontWeight} onChange={(fontWeight) => set({ fontWeight })} />
-                )}
-                {(block.type === "text" || block.type === "richtext" || block.type === "quote" || block.type === "callout") && (
-                  <SliderField label="Line height" value={block.lineHeight} min={1} max={2.4} step={0.1} format={(v) => v.toFixed(1)} onChange={(lineHeight) => set({ lineHeight })} />
-                )}
-                {(block.type === "button" || block.type === "callout") && (
-                  <SliderField label="Corner radius" value={block.radius} min={0} max={28} step={1} suffix="%" format={(v) => `${Math.round((v / 28) * 100)}`} onChange={(radius) => set({ radius })} />
-                )}
-              </>
-            )}
-            {hasSpacing && <SpacingFields block={block} doc={doc} set={set} />}
-          </InspectorGroup>
-        )}
-
-        {hasSelects && (
-          <InspectorGroup>
-            {hasFont && <FontField value={block.fontFamily} doc={doc} onChange={(fontFamily) => set({ fontFamily })} />}
-            {hasAlign && (
-              <Field label="Alignment">
-                <AlignPicker value={block.align} onChange={(align) => set({ align })} />
-              </Field>
-            )}
-            {block.type === "button" && (
-              <Field label="Width">
-                <NativeSelect className="w-full" value={block.fullWidth ? "full" : "auto"} onChange={(e) => set({ fullWidth: e.target.value === "full" })}>
-                  <NativeSelectOption value="auto">Auto</NativeSelectOption>
-                  <NativeSelectOption value="full">Full width</NativeSelectOption>
-                </NativeSelect>
-              </Field>
-            )}
-            {block.type === "list" && (
-              <Field label="Style">
-                <NativeSelect className="w-full" value={block.listStyle} onChange={(e) => set({ listStyle: e.target.value as Block["listStyle"] })}>
-                  <NativeSelectOption value="bulleted">Bulleted</NativeSelectOption>
-                  <NativeSelectOption value="numbered">Numbered</NativeSelectOption>
-                  <NativeSelectOption value="none">None</NativeSelectOption>
-                </NativeSelect>
-              </Field>
-            )}
-            {block.type === "table" && (
-              <>
-                <Field label="Header row">
-                  <NativeSelect className="w-full" value={block.headerRow ? "on" : "off"} onChange={(e) => set({ headerRow: e.target.value === "on" })}>
-                    <NativeSelectOption value="on">Bold first row</NativeSelectOption>
-                    <NativeSelectOption value="off">No header</NativeSelectOption>
-                  </NativeSelect>
-                </Field>
-                <Field label="Borders">
-                  <NativeSelect className="w-full" value={block.borders ? "on" : "off"} onChange={(e) => set({ borders: e.target.value === "on" })}>
-                    <NativeSelectOption value="on">Show cell borders</NativeSelectOption>
-                    <NativeSelectOption value="off">No borders</NativeSelectOption>
-                  </NativeSelect>
-                </Field>
-              </>
-            )}
-          </InspectorGroup>
-        )}
-      </div>
-
-      <div className="flex gap-2 border-t border-border p-4">
-        <Button variant="outline" size="sm" className="flex-1" onClick={() => reset(block.id)}>
-          <RotateCcw data-icon="inline-start" />
-          Reset
-        </Button>
-        <Button variant="destructive" size="sm" className="flex-1" onClick={() => remove(block.id)}>
-          <Trash2 data-icon="inline-start" />
-          Delete
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-function ColumnsFields({
-  block,
-  set,
-}: {
-  block: Block
-  set: (patch: Partial<Block>, tag?: string | null) => void
-}) {
-  const doc = useBuilder((state) => state.doc)
-  const children = block.children
-  const recap = (kids: Block[]): Block[] => {
-    const max = Math.max(
-      80,
-      Math.floor((EMAIL_WIDTH - blockSpacing(block, doc).x * 2) / Math.max(1, kids.length)) -
-        doc.spacingX * 2,
-    )
-    return kids.map((child) =>
-      child.type === "image" ? { ...child, width: Math.min(child.width, max) } : child,
-    )
-  }
-  const setChild = (index: number, patch: Partial<Block>) =>
-    set(
-      { children: children.map((child, i) => (i === index ? { ...child, ...patch } : child)) },
-      `update:${block.id}:child:${children[index].id}:${Object.keys(patch).sort().join(",")}`,
-    )
-  const setType = (index: number, type: BlockType) => {
-    const fresh = makeColumnChild(type)
-    const sized = type === "image" ? { ...fresh, width: columnContentWidth(children.length, doc.spacingX) } : fresh
-    set({ children: children.map((child, i) => (i === index ? sized : child)) }, null)
-  }
-  const addColumn = () => set({ children: recap([...children, makeColumnChild("text")]) }, null)
-  const removeColumn = (index: number) =>
-    set({ children: recap(children.filter((_, i) => i !== index)) }, null)
-  const imgMax = Math.max(
-    80,
-    Math.floor((EMAIL_WIDTH - blockSpacing(block, doc).x * 2) / Math.max(1, children.length)) -
-      doc.spacingX * 2,
-  )
-
-  return (
-    <div className="flex flex-col gap-3">
-      {children.map((child, index) => (
-        <div key={child.id} className="flex flex-col gap-3">
-          {index > 0 && <div aria-hidden className="mx-1 border-t border-border" />}
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Column {index + 1}</span>
-            {children.length > 1 && (
-              <button
-                type="button"
-                aria-label="Remove column"
-                onClick={() => removeColumn(index)}
-                className="flex size-6 items-center justify-center rounded-md text-muted-foreground/60 transition hover:text-destructive"
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
-          </div>
-          <Field label="Type">
-            <NativeSelect
-              className="w-full"
-              value={child.type}
-              onChange={(e) => setType(index, e.target.value as BlockType)}
-            >
-              {COLUMN_TYPES.map((type) => (
-                <NativeSelectOption key={type} value={type}>
-                  {META[type].label}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </Field>
-          <ColumnChildFields child={child} imgMax={imgMax} onChange={(patch) => setChild(index, patch)} />
-          <Field label="Align">
-            <AlignPicker value={child.align} onChange={(align) => setChild(index, { align })} />
-          </Field>
-        </div>
-      ))}
-      {children.length < 3 && (
-        <Button variant="outline" size="sm" className="w-full" onClick={addColumn}>
-          <Plus data-icon="inline-start" />
-          Add column
-        </Button>
-      )}
-    </div>
-  )
-}
-
-function ColumnChildFields({
-  child,
-  imgMax,
-  onChange,
-}: {
-  child: Block
-  imgMax: number
-  onChange: (patch: Partial<Block>) => void
-}) {
-  switch (child.type) {
-    case "heading":
-      return (
-        <>
-          <Field label="Text">
-            <Input value={child.text} onChange={(e) => onChange({ text: e.target.value })} placeholder={PLACEHOLDERS.heading} />
-          </Field>
-          <ColorField label="Colour" value={child.color} onChange={(color) => onChange({ color })} />
-          <SliderField label="Size" value={child.fontSize} min={12} max={40} step={1} suffix="px" onChange={(fontSize) => onChange({ fontSize })} />
-        </>
-      )
-    case "image":
-      return (
-        <>
-          <Field label="Image URL">
-            <Input value={child.src} onChange={(e) => onChange({ src: e.target.value })} placeholder="https://…/photo.png" />
-          </Field>
-          <Field label="Alt text">
-            <Input value={child.alt} onChange={(e) => onChange({ alt: e.target.value })} placeholder="Alt text" />
-          </Field>
-          <Field label="Link URL (optional)">
-            <Input value={child.href} onChange={(e) => onChange({ href: e.target.value })} placeholder="https://…" />
-          </Field>
-          <SliderField label="Width" value={Math.min(child.width, imgMax)} min={40} max={imgMax} step={1} suffix="px" onChange={(width) => onChange({ width })} />
-        </>
-      )
-    case "button":
-      return (
-        <>
-          <Field label="Label">
-            <Input value={child.text} onChange={(e) => onChange({ text: e.target.value })} placeholder={PLACEHOLDERS.button} />
-          </Field>
-          <Field label="Link URL">
-            <Input value={child.href} onChange={(e) => onChange({ href: e.target.value })} placeholder="https://…" />
-          </Field>
-          <ColorField label="Text" value={child.color} onChange={(color) => onChange({ color })} />
-          <ColorField label="Background" value={child.background} onChange={(background) => onChange({ background })} />
-        </>
-      )
-    case "text":
-    default:
-      return (
-        <>
-          <Field label="Content">
-            <Textarea value={child.text} onChange={(e) => onChange({ text: e.target.value })} rows={3} placeholder={PLACEHOLDERS.text} />
-          </Field>
-          <ColorField label="Colour" value={child.color} onChange={(color) => onChange({ color })} />
-          <SliderField label="Size" value={child.fontSize} min={12} max={40} step={1} suffix="px" onChange={(fontSize) => onChange({ fontSize })} />
-        </>
-      )
-  }
-}
-
-function BodyInspector() {
-  const doc = useBuilder((state) => state.doc)
-  const updateDoc = useBuilder((state) => state.updateDoc)
-
-  return (
-    <div className="flex flex-col">
-      <div className="flex flex-col gap-4 p-4">
-        <Field label="Title">
-          <Input value={doc.title} onChange={(e) => updateDoc({ title: e.target.value })} placeholder="Email title" />
-        </Field>
-        <Field label="Description">
-          <Textarea value={doc.description} onChange={(e) => updateDoc({ description: e.target.value })} rows={2} placeholder="Preview text" />
-        </Field>
-      </div>
-
-      <InspectorGroup>
-        <ColorField label="Canvas" value={doc.background} onChange={(background) => updateDoc({ background })} />
-        <ColorField label="Background" value={doc.contentBackground} onChange={(contentBackground) => updateDoc({ contentBackground })} />
-      </InspectorGroup>
-
-      <InspectorGroup>
-        <SliderField label="Horizontal" value={doc.spacingX} min={0} max={64} step={2} suffix="px" onChange={(spacingX) => updateDoc({ spacingX })} />
-        <SliderField label="Vertical" value={doc.spacingY} min={0} max={64} step={2} suffix="px" onChange={(spacingY) => updateDoc({ spacingY })} />
-      </InspectorGroup>
-
-      <InspectorGroup>
-        <FontField
-          value={doc.fontFamily}
-          doc={doc}
-          inheritable={false}
-          onChange={(fontFamily) => updateDoc({ fontFamily: fontFamily ?? "system" })}
-        />
-      </InspectorGroup>
-    </div>
-  )
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
-      {children}
-    </div>
-  )
-}
-
-function InspectorGroup({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col gap-4 border-t border-border px-4 py-4">{children}</div>
-}
-
-function FontField({
-  value,
-  doc,
-  onChange,
-  inheritable = true,
-  label = "Font",
-}: {
-  value: FontKey | null
-  doc: Doc
-  onChange: (value: FontKey | null) => void
-  inheritable?: boolean
-  label?: string
-}) {
-  return (
-    <Field label={label}>
-      <NativeSelect
-        className="w-full"
-        value={value ?? "inherit"}
-        onChange={(event) =>
-          onChange(event.target.value === "inherit" ? null : (event.target.value as FontKey))
-        }
-        style={{ fontFamily: FONTS[value ?? doc.fontFamily].stack }}
-      >
-        {inheritable && (
-          <NativeSelectOption value="inherit">
-            Match body — {FONTS[doc.fontFamily].label}
-          </NativeSelectOption>
-        )}
-        {FONT_KEYS.map((key) => (
-          <NativeSelectOption key={key} value={key} style={{ fontFamily: FONTS[key].stack }}>
-            {FONTS[key].label}
-          </NativeSelectOption>
-        ))}
-      </NativeSelect>
-    </Field>
-  )
-}
-
-function SpacingFields({
-  block,
-  doc,
-  set,
-}: {
-  block: Block
-  doc: Doc
-  set: (patch: Partial<Block>, tag?: string | null) => void
-}) {
-  const { x, y } = blockSpacing(block, doc)
-  const linked = block.spacingX === null && block.spacingY === null
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
-        <Label htmlFor={`spacing-${block.id}`} className="text-xs font-medium text-muted-foreground">
-          Spacing
-        </Label>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Match body</span>
-          <Switch
-            id={`spacing-${block.id}`}
-            checked={linked}
-            onCheckedChange={(on) =>
-              set(on ? { spacingX: null, spacingY: null } : { spacingX: x, spacingY: y }, null)
-            }
-          />
-        </div>
-      </div>
-      <div className="flex flex-col gap-4">
-        <SliderField label="Horizontal" value={x} min={0} max={64} step={2} suffix="px" disabled={linked} onChange={(spacingX) => set({ spacingX })} />
-        <SliderField label="Vertical" value={y} min={0} max={64} step={2} suffix="px" disabled={linked} onChange={(spacingY) => set({ spacingY })} />
-      </div>
-    </div>
-  )
-}
-
-function LinkRowsField({
-  value,
-  onChange,
-  labelPlaceholder,
-  addLabel,
-}: {
-  value: string
-  onChange: (value: string) => void
-  labelPlaceholder: string
-  addLabel: string
-}) {
-  const rows = (value.length ? value.split("\n") : [""]).map((line) => {
-    const [label, url] = line.split("|")
-    return { label: (label ?? "").trim(), url: (url ?? "").trim() }
-  })
-  const serialize = (rs: { label: string; url: string }[]) =>
-    rs.map((r) => (r.url ? `${r.label} | ${r.url}` : r.label)).join("\n")
-  const setRow = (i: number, patch: Partial<{ label: string; url: string }>) =>
-    onChange(serialize(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r))))
-
-  return (
-    <div className="flex flex-col gap-2">
-      {rows.map((row, i) => (
-        <div key={i} className="flex items-center gap-1.5">
-          <Input
-            className="w-0 flex-1"
-            value={row.label}
-            onChange={(e) => setRow(i, { label: e.target.value })}
-            placeholder={labelPlaceholder}
-          />
-          <Input
-            className="w-0 flex-[1.4]"
-            value={row.url}
-            onChange={(e) => setRow(i, { url: e.target.value })}
-            placeholder="https://…"
-          />
-          <button
-            type="button"
-            aria-label="Remove"
-            disabled={rows.length <= 1}
-            onClick={() => onChange(serialize(rows.filter((_, idx) => idx !== i)))}
-            className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 transition hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
-          >
-            <X className="size-3.5" />
-          </button>
-        </div>
-      ))}
-      <Button
-        variant="outline"
-        size="sm"
-        className="w-full"
-        onClick={() => onChange(serialize([...rows, { label: "", url: "" }]))}
-      >
-        <Plus data-icon="inline-start" />
-        {addLabel}
-      </Button>
-    </div>
-  )
-}
-
-function WeightField({ value, onChange }: { value: number; onChange: (value: number) => void }) {
-  return (
-    <Field label="Weight">
-      <NativeSelect className="w-full" value={value} onChange={(e) => onChange(Number(e.target.value))}>
-        {FONT_WEIGHTS.map((weight) => (
-          <NativeSelectOption key={weight.value} value={weight.value}>
-            {weight.label}
-          </NativeSelectOption>
-        ))}
-      </NativeSelect>
-    </Field>
-  )
-}
-
-function TableEditor({ value, onChange }: { value: string; onChange: (text: string) => void }) {
-  const parsed = value.trim() ? value.split(/\r?\n/).map((row) => row.split(" | ")) : [["", ""]]
-  const cols = Math.max(1, ...parsed.map((row) => row.length))
-  const rows = parsed.map((row) => {
-    const cells = [...row]
-    while (cells.length < cols) cells.push("")
-    return cells
-  })
-
-  const commit = (next: string[][]) => onChange(next.map((row) => row.join(" | ")).join("\n"))
-  const setCell = (ri: number, ci: number, v: string) => {
-    const next = rows.map((row) => [...row])
-    next[ri][ci] = v
-    commit(next)
-  }
-  const addRow = () => commit([...rows, Array<string>(cols).fill("")])
-  const addCol = () => commit(rows.map((row) => [...row, ""]))
-  const removeRow = (ri: number) => {
-    if (rows.length > 1) commit(rows.filter((_, i) => i !== ri))
-  }
-  const removeCol = (ci: number) => {
-    if (cols > 1) commit(rows.map((row) => row.filter((_, i) => i !== ci)))
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr className="bg-muted/40">
-              {rows[0].map((_, ci) => (
-                <th key={ci} className="border-r border-b border-border p-0 font-normal">
-                  <button
-                    type="button"
-                    onClick={() => removeCol(ci)}
-                    disabled={cols <= 1}
-                    aria-label={`Remove column ${ci + 1}`}
-                    className="flex h-6 w-full items-center justify-center text-muted-foreground/60 transition hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
-                  >
-                    <X className="size-3" />
-                  </button>
-                </th>
-              ))}
-              <th className="w-8 border-b border-border p-0">
-                <button
-                  type="button"
-                  onClick={addCol}
-                  aria-label="Add column"
-                  className="flex h-6 w-full items-center justify-center text-muted-foreground transition hover:text-primary"
-                >
-                  <Plus className="size-3.5" />
-                </button>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, ri) => (
-              <tr key={ri}>
-                {row.map((cell, ci) => (
-                  <td key={ci} className="border-r border-b border-border p-0">
-                    <input
-                      value={cell}
-                      onChange={(event) => setCell(ri, ci, event.target.value)}
-                      placeholder="…"
-                      className="w-full min-w-24 bg-transparent px-2.5 py-2 outline-none focus:bg-primary/5"
-                    />
-                  </td>
-                ))}
-                <td className="w-8 border-b border-border p-0">
-                  <button
-                    type="button"
-                    onClick={() => removeRow(ri)}
-                    disabled={rows.length <= 1}
-                    aria-label={`Remove row ${ri + 1}`}
-                    className="flex size-8 items-center justify-center text-muted-foreground/60 transition hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Button type="button" variant="outline" size="sm" className="w-full" onClick={addRow}>
-        <Plus data-icon="inline-start" />
-        Add row
-      </Button>
-    </div>
-  )
-}
-
-function SliderField({
-  label,
-  value,
-  min,
-  max,
-  step,
-  suffix = "",
-  format,
-  disabled,
-  onChange,
-}: {
-  label: string
-  value: number
-  min: number
-  max: number
-  step: number
-  suffix?: string
-  format?: (value: number) => string
-  disabled?: boolean
-  onChange: (value: number) => void
-}) {
-  const text = `${format ? format(value) : value}${suffix}`
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
-        <span className="text-xs tabular-nums text-muted-foreground">{text}</span>
-      </div>
-      <Slider
-        disabled={disabled}
-        value={[value]}
-        min={min}
-        max={max}
-        step={step}
-        onValueChange={([v]) => onChange(v)}
-        formatTooltip={(v) => `${format ? format(v) : v}${suffix}`}
-      />
-    </div>
-  )
-}
-
-function ColorField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-}) {
-  const isTransparent = !value || value === "transparent"
-  const swatch = /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#ffffff"
-  const display = isTransparent ? "Transparent" : value.toUpperCase()
-  return (
-    <Field label={label}>
-      <div className="flex gap-2">
-        <input
-          type="color"
-          value={swatch}
-          onChange={(event) => onChange(event.target.value)}
-          aria-label={label}
-          className="size-9 shrink-0 cursor-pointer overflow-hidden rounded-full border border-border bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0"
-        />
-        <Input
-          value={display}
-          onChange={(event) => onChange(event.target.value)}
-          className="font-mono"
-          spellCheck={false}
-        />
-      </div>
-    </Field>
-  )
-}
-
-const ALIGNMENTS: { value: Align; icon: typeof AlignLeft; label: string }[] = [
-  { value: "left", icon: AlignLeft, label: "Left" },
-  { value: "center", icon: AlignCenter, label: "Center" },
-  { value: "right", icon: AlignRight, label: "Right" },
-]
-
-function AlignPicker({ value, onChange }: { value: Align; onChange: (value: Align) => void }) {
-  const { ref, pill } = useIndicator<HTMLDivElement>({
-    active: '[data-align][data-active="true"]',
-    item: "[data-align]",
-    axis: "x",
-  })
-
-  return (
-    <div
-      ref={ref}
-      role="radiogroup"
-      className="relative inline-flex h-9 w-full items-center rounded-full bg-muted p-[3px] text-muted-foreground"
-    >
-      <span {...pill("rounded-full bg-primary")} />
-      {ALIGNMENTS.map(({ value: option, icon: Icon, label }) => {
-        const active = option === value
-        return (
-          <button
-            key={option}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            aria-label={label}
-            data-align
-            data-active={active}
-            onClick={() => onChange(option)}
-            className="relative z-10 inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center rounded-full transition-colors select-none"
-          >
-            <IndicatorFill layout="inline-flex items-center justify-center">
-              <Icon className="size-4" />
-            </IndicatorFill>
-          </button>
-        )
-      })}
-    </div>
-  )
-}

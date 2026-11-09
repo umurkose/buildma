@@ -6,11 +6,11 @@ import { cn } from "@/lib/utils"
 import { Reveal, SPACE, Section, SectionHeader } from "@/components/landing/section"
 
 const TOKEN = {
-  punc: "text-white/40",
-  tag: "text-candy-sky",
-  attr: "text-candy-sun",
-  str: "text-white/60",
-  txt: "text-white/90",
+  punc: "text-neutral-500",
+  tag: "text-sky-400",
+  attr: "text-violet-400",
+  str: "text-emerald-400",
+  txt: "text-neutral-300",
 } as const
 
 type Token = [keyof typeof TOKEN, string]

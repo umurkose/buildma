@@ -1,0 +1,5 @@
+# Vercel installs this app with pnpm, and pnpm 11 stops an install with
+# ERR_PNPM_IGNORED_BUILDS until every dependency build script has been reviewed.
+# sharp (next/image's optimizer) only checks that its prebuilt binary is there.
+allowBuilds:
+  sharp: true

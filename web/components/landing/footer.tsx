@@ -3,7 +3,7 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { APP_NAME, APP_TAGLINE } from "@/core/client"
 import { SECTIONS } from "@/core/meta"
-import { BlockLogo } from "@/components/landing/logo"
+import { Logo } from "@/components/ui/logo"
 
 const ROUTES = [{ href: "/editor", label: "Editor" }]
 
@@ -20,8 +20,8 @@ export function Footer({ isAuth }: { isAuth: boolean }) {
               aria-label={`${APP_NAME} — home`}
               className="inline-flex items-center gap-3 rounded-2xl outline-none focus-visible:ring-3 focus-visible:ring-primary/50"
             >
-              <BlockLogo className="size-12" />
-              <span className="font-display text-4xl font-extrabold tracking-[-0.03em]">
+              <Logo className="size-12 text-foreground" />
+              <span className="text-4xl font-bold tracking-[-0.03em]">
                 {APP_NAME}
               </span>
             </Link>
@@ -49,7 +49,7 @@ export function Footer({ isAuth }: { isAuth: boolean }) {
       {/* The name, set big enough to run off the bottom edge. */}
       <div
         aria-hidden
-        className="mx-auto -mb-[0.2em] max-w-6xl px-4 pt-6 text-center font-display text-[clamp(5rem,24vw,17rem)] leading-[0.8] font-extrabold tracking-[-0.045em] text-candy-sun select-none sm:px-6"
+        className="mx-auto -mb-[0.2em] max-w-6xl px-4 pt-6 text-center font-display text-[clamp(5rem,24vw,17rem)] leading-[0.8] font-bold tracking-[-0.05em] text-muted-foreground/15 select-none sm:px-6"
       >
         {APP_NAME}
       </div>
